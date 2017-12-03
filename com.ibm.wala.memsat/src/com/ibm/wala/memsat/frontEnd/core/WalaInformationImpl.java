@@ -579,6 +579,26 @@ public class WalaInformationImpl implements WalaInformation {
 					return b.toString();
 				}
 			}
+			
+			private void frontierInternal(CGNode node, ISSABasicBlock bb, Set<InlinedInstructionImpl> stuff,
+					Map<SSACFG.BasicBlock, InlinedInstructionImpl> last) {
+				if (last.containsKey(bb)) {
+					assert bb.getNumber() != -1;
+					stuff.add(last.get(bb)); 
+				} else {
+					Iterator<ISSABasicBlock> pbs = node.getIR().getControlFlowGraph().getPredNodes(bb);
+					while (pbs.hasNext()) {
+						frontierInternal(node, pbs.next(), stuff, last);
+					}
+				}
+			}
+			
+			public Set<InlinedInstructionImpl> frontier(CGNode node, ISSABasicBlock bb,
+					Map<SSACFG.BasicBlock, InlinedInstructionImpl> last) {
+				Set<InlinedInstructionImpl> stuff = HashSetFactory.make();
+				frontierInternal(node, bb, stuff, last);
+				return stuff;
+			}
 
 			private <E, R> R instructions(
 					Function<InlinedInstructionImpl, E> f, Reduce<E, R> r,
@@ -628,7 +648,7 @@ public class WalaInformationImpl implements WalaInformation {
 
 				return result;
 			}
-
+			
 			private <E, R> R instructions(final CGNode node,
 					final Stack<CallSite> base,
 					Function<InlinedInstructionImpl, E> f, Reduce<E, R> r,
@@ -745,41 +765,99 @@ public class WalaInformationImpl implements WalaInformation {
 						}, Recurse.Pre);
 			}
 			
+			@Override
+			public Graph<InlinedInstruction> simpleThreadOrder() {
+				Graph<InlinedInstruction> res = SlowSparseNumberedGraph.make();
+			
+				// TODO slice nodes reachable from threadRoot
+				for (CGNode node : callGraph) {
+					WalaCGNodeInformation nodeInfo = cgNodeInformation(node);
+					
+					// Context
+					InlinedInstructionImpl prev = null;
+					Map<SSACFG.BasicBlock, InlinedInstructionImpl> last = new HashMap<>();
+					
+					Iterator<? extends IndexedEntry<SSAInstruction>> it;
+					for (it = nodeInfo.relevantInstructions(); it.hasNext();) {
+						InstructionEntry I = (InstructionEntry) it.next();
+						final int index = I.index();
+						final SSAInstruction inst = I.value();
+
+						InlinedInstructionImpl curr = new InlinedInstructionImpl(node, index, I.bb(), inst,
+								/* do not need a CallSite if there is no cycles in call graph */
+								new LinkedStack<CallSite>());
+						res.addNode(curr);
+						if (prev != null && !prev.bb.isExitBlock()) {
+							SSACFG.BasicBlock pbb = prev.bb;
+							if (pbb == curr.bb) {
+								res.addEdge(prev, curr);
+							} else {
+								assert prev.node == curr.node; 
+								last.put(prev.bb, prev);
+								for (InlinedInstructionImpl p : frontier(curr.node, curr.bb, last)) {
+									res.addEdge(p, curr);
+								}
+							}
+						} 
+						prev = curr;
+					}
+				}
+				
+				for (InlinedInstruction inst : res) {
+					if (inst.instruction() instanceof SSAAbstractInvokeInstruction) {
+						CallSiteReference x = ((SSAAbstractInvokeInstruction) inst.instruction())
+								.getCallSite();
+
+						// these are not really method calls
+						Set<MethodReference> memoryInstructions = opt.memoryModel().memoryInstructions();
+						if (concurrent() && memoryInstructions.contains(x.getDeclaredTarget())) {
+							continue;
+						}
+						
+						for (CGNode target : callGraph.getPossibleTargets(inst.cgNode(), x)) {
+							Graph<InlinedInstruction> targetInstructions =
+									GraphSlicer.prune(res, i -> i.cgNode().equals(target));
+							// Add edges to target
+							for (InlinedInstruction targetInst : targetInstructions) {
+								if (targetInstructions.getPredNodeCount(targetInst) == 0) {
+									res.addEdge(inst, targetInst);
+								}
+							}
+							
+							// Add edges from target to successors of inst
+							for (InlinedInstruction targetInst : targetInstructions) {
+								if (targetInstructions.getSuccNodeCount(targetInst) == 0) {
+									res.addEdge(targetInst, inst);
+								}
+							}
+						}
+					}
+				}
+			
+				return pruneThreadOrderGraph(res);
+			}
+			
+			@Override
 			public Graph<InlinedInstruction> threadOrder() {
 				final Graph<InlinedInstruction> G = instructions(
 						new Function<InlinedInstructionImpl, InlinedInstructionImpl>() {
+							@Override
 							public InlinedInstructionImpl apply(
 									InlinedInstructionImpl x) {
 								return x;
 							}
 						},
 						new Reduce<InlinedInstructionImpl, Graph<InlinedInstruction>>() {
+							@Override
 							public Graph<InlinedInstruction> initial() {
 								return SlowSparseNumberedGraph.make();
 							}
 
 							private InlinedInstructionImpl prev;
 							
-							private Map<SSACFG.BasicBlock, InlinedInstructionImpl> last = new HashMap<SSACFG.BasicBlock, InlinedInstructionImpl>();
-				
-							private void frontierInternal(CGNode node, ISSABasicBlock bb, Set<InlinedInstructionImpl> stuff) {
-								if (last.containsKey(bb)) {
-									assert bb.getNumber() != -1;
-									stuff.add(last.get(bb)); 
-								} else {
-									Iterator<ISSABasicBlock> pbs = node.getIR().getControlFlowGraph().getPredNodes(bb);
-									while (pbs.hasNext()) {
-										frontierInternal(node, pbs.next(), stuff);
-									}
-								}
-							}
+							private Map<SSACFG.BasicBlock, InlinedInstructionImpl> last = new HashMap<>();
 							
-							public Set<InlinedInstructionImpl> frontier(CGNode node, ISSABasicBlock bb) {
-								Set<InlinedInstructionImpl> stuff = HashSetFactory.make();
-								frontierInternal(node, bb, stuff);
-								return stuff;
-							}
-							
+							@Override
 							public Graph<InlinedInstruction> reduce(
 									InlinedInstructionImpl x,
 									Graph<InlinedInstruction> y) {
@@ -790,7 +868,7 @@ public class WalaInformationImpl implements WalaInformation {
 										y.addEdge(prev, x);
 									} else if (prev.node == x.node) {
 										last.put(prev.bb, prev);
-										for (InlinedInstructionImpl p : frontier(x.node, x.bb)) {
+										for (InlinedInstructionImpl p : frontier(x.node, x.bb, last)) {
 											y.addEdge(p, x);
 										}
 									} else {
@@ -802,23 +880,28 @@ public class WalaInformationImpl implements WalaInformation {
 							}
 						}, Recurse.Pre);
 				
+				return pruneThreadOrderGraph(G);
+			}
+			
+			private Graph<InlinedInstruction> pruneThreadOrderGraph(Graph<InlinedInstruction> g) {
 				InlinedInstruction s = start();
-				G.addNode(s);
-				for(InlinedInstruction x : G) {
-					if (x != s && G.getPredNodeCount(x) == 0) {
-						G.addEdge(s, x);
+				g.addNode(s);
+				for(InlinedInstruction x : g) {
+					if (x != s && g.getPredNodeCount(x) == 0) {
+						g.addEdge(s, x);
 					}
 				}
 				
 				InlinedInstruction e = end();
-				G.addNode(e);
-				for(InlinedInstruction x : G) {
-					if (x != e && G.getSuccNodeCount(x) == 0) {
-						G.addEdge(x, e);
+				g.addNode(e);
+				for(InlinedInstruction x : g) {
+					if (x != e && g.getSuccNodeCount(x) == 0) {
+						g.addEdge(x, e);
 					}
 				}
 				
-				return GraphSlicer.project(G, new Predicate<InlinedInstruction>() {
+				return GraphSlicer.project(g, new Predicate<InlinedInstruction>() {
+					@Override
 					public boolean test(InlinedInstruction o) {
 						return o.action() != null;
 					}
@@ -1035,7 +1118,7 @@ public class WalaInformationImpl implements WalaInformation {
 				}
 				b.append("\n THREAD ORDER:");
 				final Graph<InlinedInstruction> to = threadOrder();
-				if (to.getNumberOfNodes()==0)  
+				if (to.getNumberOfNodes()==0)
 					b.append(" { }\n");
 				else {
 					b.append(" {");

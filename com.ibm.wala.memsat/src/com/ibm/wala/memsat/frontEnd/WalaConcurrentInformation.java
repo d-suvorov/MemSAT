@@ -74,6 +74,11 @@ public interface WalaConcurrentInformation {
 	public abstract Graph<InlinedInstruction> threadOrder();
 	
 	/**
+	 * A dirty hack. Do not work with recursion
+	 */
+	public abstract Graph<InlinedInstruction> simpleThreadOrder();
+	
+	/**
 	 * Returns all write instructions to action.instruction.getDeclaredField() 
 	 * that might be seen by the given read action.
 	 * @requires action in this.actions

@@ -6,6 +6,7 @@ import static test.TestUtil.threadMethods;
 import java.io.File;
 import java.util.Set;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.ibm.wala.memsat.Miniatur;

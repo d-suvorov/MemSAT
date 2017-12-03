@@ -218,8 +218,17 @@ public final class Programs {
 	public static Graph<InlinedInstruction> programOrder(WalaInformation info) { 
 		final Graph<CGNode> threads = info.threads();
 		final Collection<Graph<InlinedInstruction>> ords = new ArrayList<Graph<InlinedInstruction>>(threads.getNumberOfNodes());
-		for(CGNode t : threads) { 
-			ords.add(info.concurrentInformation(t).threadOrder());
+		for(CGNode t : threads) {
+			WalaConcurrentInformation cInfo = info.concurrentInformation(t);
+			Graph<InlinedInstruction> simple = cInfo.simpleThreadOrder();
+			Graph<InlinedInstruction> full = cInfo.threadOrder();
+			if (!Graphs.equal(simple, full)) {
+				System.out.println("thread order graphs differ:");
+				System.out.println(simple);
+				System.out.println("=====");
+				System.out.println(full);
+			}
+			ords.add(simple);
 		}
 		return transitiveClosure(union(ords));
 	}
@@ -232,7 +241,7 @@ public final class Programs {
 		return new Predicate<InlinedInstruction>() {
 			final Set<Action> accepted = EnumSet.of(act, acts);
 			@Override
-      public boolean test(InlinedInstruction o) { 
+			public boolean test(InlinedInstruction o) { 
 				return accepted.contains(o.action()); 
 			}
 		};
