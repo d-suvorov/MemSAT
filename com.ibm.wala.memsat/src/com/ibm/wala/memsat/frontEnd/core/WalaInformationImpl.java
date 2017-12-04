@@ -800,12 +800,11 @@ public class WalaInformationImpl implements WalaInformation {
 							
 							// these are not really method calls
 							Set<MethodReference> memoryInstructions = opt.memoryModel().memoryInstructions();
-							if (concurrent() && memoryInstructions.contains(x.getDeclaredTarget())) {
-								continue;
-							}
-							
-							for (CGNode target : callGraph.getPossibleTargets(node, x)) {
-								queue.add(Pair.make(target, makeCalleeStack(currentStack, x, node)));
+							boolean special = concurrent() && memoryInstructions.contains(x.getDeclaredTarget());
+							if (!special) {
+								for (CGNode target : callGraph.getPossibleTargets(node, x)) {
+									queue.add(Pair.make(target, makeCalleeStack(currentStack, x, node)));
+								}
 							}
 						}
 
@@ -869,7 +868,7 @@ public class WalaInformationImpl implements WalaInformation {
 			}
 			
 			@Override
-      public Graph<InlinedInstruction> legacyThreadOrder() {
+			public Graph<InlinedInstruction> legacyThreadOrder() {
 				final Graph<InlinedInstruction> G = instructions(
 						new Function<InlinedInstructionImpl, InlinedInstructionImpl>() {
 							@Override
@@ -941,7 +940,7 @@ public class WalaInformationImpl implements WalaInformation {
 			
 			@Override
 			public Graph<InlinedInstruction> threadOrder() {
-				return legacyThreadOrder();
+				return simpleThreadOrder();
 			}
 
 			private final Object fakeArrayField = "fake array field";
