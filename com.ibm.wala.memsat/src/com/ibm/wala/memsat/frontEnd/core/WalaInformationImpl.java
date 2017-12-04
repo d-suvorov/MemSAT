@@ -22,6 +22,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import javax.swing.event.ListSelectionEvent;
+
 import com.ibm.wala.analysis.pointers.HeapGraph;
 import com.ibm.wala.cfg.cdg.ControlDependenceGraph;
 import com.ibm.wala.classLoader.CallSiteReference;
@@ -769,8 +771,8 @@ public class WalaInformationImpl implements WalaInformation {
 			public Graph<InlinedInstruction> simpleThreadOrder() {
 				Graph<InlinedInstruction> res = SlowSparseNumberedGraph.make();
 			
-				// TODO slice nodes reachable from threadRoot
-				for (CGNode node : callGraph) {
+				Set<CGNode> threadNodes = DFS.getReachableNodes(callGraph, Collections.singleton(threadRoot));
+				for (CGNode node : threadNodes) {
 					WalaCGNodeInformation nodeInfo = cgNodeInformation(node);
 					
 					// Context
@@ -824,10 +826,16 @@ public class WalaInformationImpl implements WalaInformation {
 								}
 							}
 							
-							// Add edges from target to successors of inst
+							// Add edges from target to successors of inst in the same node
 							for (InlinedInstruction targetInst : targetInstructions) {
 								if (targetInstructions.getSuccNodeCount(targetInst) == 0) {
-									res.addEdge(targetInst, inst);
+									Iterator<InlinedInstruction> succIter = res.getSuccNodes(inst);
+									while (succIter.hasNext()) {
+										InlinedInstruction succ = succIter.next();
+										if (succ.cgNode().equals(inst.cgNode())) {
+											res.addEdge(targetInst, succ);
+										}
+									}
 								}
 							}
 						}
@@ -837,8 +845,7 @@ public class WalaInformationImpl implements WalaInformation {
 				return pruneThreadOrderGraph(res);
 			}
 			
-			@Override
-			public Graph<InlinedInstruction> threadOrder() {
+			public Graph<InlinedInstruction> legacyThreadOrder() {
 				final Graph<InlinedInstruction> G = instructions(
 						new Function<InlinedInstructionImpl, InlinedInstructionImpl>() {
 							@Override
@@ -906,6 +913,11 @@ public class WalaInformationImpl implements WalaInformation {
 						return o.action() != null;
 					}
 				});
+			}
+			
+			@Override
+			public Graph<InlinedInstruction> threadOrder() {
+				return simpleThreadOrder();
 			}
 
 			private final Object fakeArrayField = "fake array field";
