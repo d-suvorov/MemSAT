@@ -769,9 +769,8 @@ public class WalaInformationImpl implements WalaInformation {
 						}, Recurse.Pre);
 			}
 			
-			@Override
 			// TODO simplify this method
-			public Graph<InlinedInstruction> simpleThreadOrder() {
+			private Graph<InlinedInstruction> simpleThreadOrder() {
 				Graph<InlinedInstruction> res = SlowSparseNumberedGraph.make();
 				
 				Queue<Pair<CGNode, Stack<CallSite>>> queue = new LinkedList<>();
@@ -867,8 +866,7 @@ public class WalaInformationImpl implements WalaInformation {
 				return pruneThreadOrderGraph(res);
 			}
 			
-			@Override
-			public Graph<InlinedInstruction> legacyThreadOrder() {
+			private Graph<InlinedInstruction> legacyThreadOrder() {
 				final Graph<InlinedInstruction> G = instructions(
 						new Function<InlinedInstructionImpl, InlinedInstructionImpl>() {
 							@Override

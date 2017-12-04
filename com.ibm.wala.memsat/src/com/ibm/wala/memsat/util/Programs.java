@@ -220,14 +220,6 @@ public final class Programs {
 		final Collection<Graph<InlinedInstruction>> ords = new ArrayList<Graph<InlinedInstruction>>(threads.getNumberOfNodes());
 		for(CGNode t : threads) {
 			WalaConcurrentInformation cInfo = info.concurrentInformation(t);
-			Graph<InlinedInstruction> simple = cInfo.simpleThreadOrder();
-			Graph<InlinedInstruction> full = cInfo.legacyThreadOrder();
-			if (!Graphs.equal(simple, full)) {
-				System.out.println("thread order graphs differ:");
-				System.out.println(simple);
-				System.out.println("=====");
-				System.out.println(full);
-			}
 			ords.add(cInfo.threadOrder());
 		}
 		return transitiveClosure(union(ords));
