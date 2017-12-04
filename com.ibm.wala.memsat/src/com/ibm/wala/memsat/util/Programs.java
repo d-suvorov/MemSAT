@@ -221,14 +221,14 @@ public final class Programs {
 		for(CGNode t : threads) {
 			WalaConcurrentInformation cInfo = info.concurrentInformation(t);
 			Graph<InlinedInstruction> simple = cInfo.simpleThreadOrder();
-			Graph<InlinedInstruction> full = cInfo.threadOrder();
+			Graph<InlinedInstruction> full = cInfo.legacyThreadOrder();
 			if (!Graphs.equal(simple, full)) {
 				System.out.println("thread order graphs differ:");
 				System.out.println(simple);
 				System.out.println("=====");
 				System.out.println(full);
 			}
-			ords.add(simple);
+			ords.add(cInfo.threadOrder());
 		}
 		return transitiveClosure(union(ords));
 	}

@@ -17,7 +17,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -768,11 +770,17 @@ public class WalaInformationImpl implements WalaInformation {
 			}
 			
 			@Override
+			// TODO simplify this method
 			public Graph<InlinedInstruction> simpleThreadOrder() {
 				Graph<InlinedInstruction> res = SlowSparseNumberedGraph.make();
-			
-				Set<CGNode> threadNodes = DFS.getReachableNodes(callGraph, Collections.singleton(threadRoot));
-				for (CGNode node : threadNodes) {
+				
+				Queue<Pair<CGNode, Stack<CallSite>>> queue = new LinkedList<>();
+				queue.add(Pair.make(threadRoot, new LinkedStack<CallSite>()));
+				while (!queue.isEmpty()) {
+					Pair<CGNode, Stack<CallSite>> next = queue.poll();
+					CGNode node = next.fst;
+					Stack<CallSite> currentStack = next.snd;
+					
 					WalaCGNodeInformation nodeInfo = cgNodeInformation(node);
 					
 					// Context
@@ -784,10 +792,25 @@ public class WalaInformationImpl implements WalaInformation {
 						InstructionEntry I = (InstructionEntry) it.next();
 						final int index = I.index();
 						final SSAInstruction inst = I.value();
+						
+						// Push next nodes to queue with correct call stacks
+						if (inst instanceof SSAAbstractInvokeInstruction) {
+							CallSiteReference x = ((SSAAbstractInvokeInstruction) inst)
+									.getCallSite();
+							
+							// these are not really method calls
+							Set<MethodReference> memoryInstructions = opt.memoryModel().memoryInstructions();
+							if (concurrent() && memoryInstructions.contains(x.getDeclaredTarget())) {
+								continue;
+							}
+							
+							for (CGNode target : callGraph.getPossibleTargets(node, x)) {
+								queue.add(Pair.make(target, makeCalleeStack(currentStack, x, node)));
+							}
+						}
 
-						InlinedInstructionImpl curr = new InlinedInstructionImpl(node, index, I.bb(), inst,
-								/* do not need a CallSite if there is no cycles in call graph */
-								new LinkedStack<CallSite>());
+						InlinedInstructionImpl curr = new InlinedInstructionImpl(
+								node, index, I.bb(), inst, currentStack);
 						res.addNode(curr);
 						if (prev != null && !prev.bb.isExitBlock()) {
 							SSACFG.BasicBlock pbb = prev.bb;
@@ -845,7 +868,8 @@ public class WalaInformationImpl implements WalaInformation {
 				return pruneThreadOrderGraph(res);
 			}
 			
-			public Graph<InlinedInstruction> legacyThreadOrder() {
+			@Override
+      public Graph<InlinedInstruction> legacyThreadOrder() {
 				final Graph<InlinedInstruction> G = instructions(
 						new Function<InlinedInstructionImpl, InlinedInstructionImpl>() {
 							@Override
@@ -917,7 +941,7 @@ public class WalaInformationImpl implements WalaInformation {
 			
 			@Override
 			public Graph<InlinedInstruction> threadOrder() {
-				return simpleThreadOrder();
+				return legacyThreadOrder();
 			}
 
 			private final Object fakeArrayField = "fake array field";
