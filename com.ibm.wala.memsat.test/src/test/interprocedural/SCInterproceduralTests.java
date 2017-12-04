@@ -10,7 +10,7 @@ import com.ibm.wala.types.MethodReference;
 
 public class SCInterproceduralTests extends InterproceduralTests {
 	public SCInterproceduralTests() {
-		super(new HashSet<String>(Arrays.asList("01")));
+		super(new HashSet<String>(Arrays.asList("01", "02", "03", "04", "05", "06")));
 	}
 
 	@Override
