@@ -1,7 +1,7 @@
 package data.interprocedural;
 
 public final class Test03 {
-	static int a = 0;
+	static volatile int a = 0;
 	
 	public static final void p1() {
 		foo();

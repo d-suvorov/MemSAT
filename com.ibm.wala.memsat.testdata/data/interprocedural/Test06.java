@@ -2,14 +2,14 @@ package data.interprocedural;
 
 public final class Test06 {
 	public static class Box {
-		int f;
+		volatile int f;
 		
 		Box(int f) {
 			this.f = f;
 		}
 	}
 	
-	static Box b;
+	static volatile Box b;
 	
 	public static final void p1() {
 		b = new Box(1);

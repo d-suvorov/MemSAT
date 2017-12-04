@@ -9,7 +9,7 @@ public final class Test04 {
 		}
 	}
 	
-	static int a = 0;
+	static volatile int a = 0;
 	
 	public static final void p1() {
 		final int r1 = a;

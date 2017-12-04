@@ -9,7 +9,7 @@ public final class Test05 {
 		}
 	}
 	
-	static Box b;
+	static volatile Box b;
 	
 	public static final void p1() {
 		b = new Box(1);
