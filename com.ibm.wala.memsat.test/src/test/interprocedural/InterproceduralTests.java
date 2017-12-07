@@ -18,14 +18,14 @@ import data.interprocedural.Test06;
 import test.ConcurrentTests;
 
 public abstract class InterproceduralTests extends ConcurrentTests {
-	private static final File NEMOS_TESTS = new File("source/data/interprocedural");
+	private static final File INTERPROCEDURAL_TESTS = new File("source/data/interprocedural");
 
 	private final Set<String> sat;
 
 	protected InterproceduralTests(Set<String> sat) { this.sat = sat; }
 
 	final void test(Miniatur miniatur, Class<?> testCase, boolean sat) {
-		test(miniatur, NEMOS_TESTS, graph(threadMethods("p", testCase)), sat);
+		test(miniatur, INTERPROCEDURAL_TESTS, graph(threadMethods("p", testCase)), sat);
 	}
 
 	private final boolean sat(String test) { return sat.contains(test); }
