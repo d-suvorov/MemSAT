@@ -13,6 +13,7 @@
  */
 package com.ibm.wala.memsat.frontEnd;
 
+import java.util.Collection;
 import java.util.Set;
 
 import com.ibm.wala.ipa.callgraph.CGNode;
@@ -62,6 +63,8 @@ public interface WalaConcurrentInformation {
 	 * @return end action of this.root.
 	 */
 	public abstract InlinedInstruction end();
+	
+	public abstract Collection<InlinedInstruction> freezes();
 	
 	/**
 	 * Returns a graph representation of the upper bound on the execution order of this thread. 

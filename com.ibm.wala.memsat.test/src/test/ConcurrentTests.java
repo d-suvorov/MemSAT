@@ -115,7 +115,7 @@ public abstract class ConcurrentTests {
 			final Map<String,String> display = printProblem(results.translation());
 			
 			final long core;
-			if (solution.instance()==null) { 
+			if (solution.instance()==null) {
 				System.out.println("Outcome: "+solution.outcome());
 				System.out.println(solution.stats());
 				final long corestart = System.currentTimeMillis();

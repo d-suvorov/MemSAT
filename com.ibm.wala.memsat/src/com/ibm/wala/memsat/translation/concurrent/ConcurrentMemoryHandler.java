@@ -74,6 +74,9 @@ final class ConcurrentMemoryHandler implements MemoryInstructionHandler {
 			insts.addAll( tInfo.actions() );
 			guards.put( tInfo.start(), Formula.TRUE);
 			guards.put( tInfo.end(), Formula.TRUE);
+			for (InlinedInstruction freeze : tInfo.freezes()) {
+			  guards.put(freeze, Formula.TRUE);
+			}
 		}	
 		this.locations = new LinkedHashMap<InlinedInstruction, Expression>();
 		this.monitors = new LinkedHashMap<InlinedInstruction, Expression>();

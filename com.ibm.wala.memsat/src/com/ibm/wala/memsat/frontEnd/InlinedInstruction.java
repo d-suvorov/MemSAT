@@ -114,7 +114,9 @@ public interface InlinedInstruction {
 		END				{ public String toString() { return "End"; } }, 
 		/** A special action is the result of an {@linkplain SSAAbstractInvokeInstruction invocation} 
 		 * of a {@linkplain MemoryModel#externals() method that can affect memory ordering} */
-		SPECIAL			{ public String toString() { return "Special"; } };
+		SPECIAL			{ public String toString() { return "Special"; } },
+	  
+	  FREEZE { public String toString() { return "Freeze"; } };
 	
 	}
 }

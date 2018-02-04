@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import com.ibm.wala.classLoader.IField;
@@ -207,7 +208,7 @@ final class ConcurrentFactory {
 	 * @return a map from each instruction in tInfo.actions to an Effects object that represents 
 	 * the effects that it may have when executed.
 	 */
-	private final Map<InlinedInstruction, Effects> effects(WalaConcurrentInformation tInfo) { 
+	private final Map<InlinedInstruction, Effects> effects(WalaConcurrentInformation tInfo) {
 		final Map<InlinedInstruction, Effects> effects = new LinkedHashMap<InlinedInstruction, Effects>();
 		final Map<Effects, Effects> cache = new LinkedHashMap<Effects, Effects>();
 		for(InlinedInstruction inst : tInfo.actions()) { 
@@ -519,6 +520,10 @@ final class ConcurrentFactory {
 					instances = referencedArray(info, inst);
 				}
 				break;
+			case FREEZE:
+			  location = null;
+			  instances = Collections.emptySet();
+			  break;
 			default : throw new AssertionError("unreachable");
 			}
 		}
@@ -533,7 +538,7 @@ final class ConcurrentFactory {
 				return true;
 			else 
 				return action.equals(other.action) && thread.equals(other.thread) && 
-				       location.equals(other.location) && 
+				       Objects.equals(location, equals(other.location)) && 
 				       ((instances.isEmpty() && other.instances.isEmpty()) || intersects(instances, other.instances));
 		}
 
@@ -547,7 +552,7 @@ final class ConcurrentFactory {
 			int result = 1;
 			result = prime * result + action.hashCode();
 			result = prime * result + instances.hashCode();
-			result = prime * result + location.hashCode();
+			result = prime * result + (location == null ? 0 : location.hashCode());
 			result = prime * result + thread.hashCode();
 			return result;
 		}
@@ -566,7 +571,7 @@ final class ConcurrentFactory {
 				return false;
 			final Effects other = (Effects) obj;
 			return action.equals(other.action) && thread.equals(other.thread) && 
-				   location.equals(other.location) && instances.equals(other.instances);
+				   Objects.equals(location, equals(other.location)) && instances.equals(other.instances);
 		}
 		
 	}

@@ -23,6 +23,7 @@ import static com.ibm.wala.memsat.util.Nodes.totalOrder;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -31,10 +32,15 @@ import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.memsat.concurrent.Program;
 import com.ibm.wala.memsat.concurrent.memory.AbstractExecution;
 import com.ibm.wala.memsat.frontEnd.InlinedInstruction;
+import com.ibm.wala.memsat.frontEnd.InlinedInstruction.Action;
 import com.ibm.wala.memsat.frontEnd.WalaConcurrentInformation;
 import com.ibm.wala.memsat.frontEnd.WalaInformation;
 import com.ibm.wala.memsat.util.Graphs;
 import com.ibm.wala.memsat.util.Nodes;
+import com.ibm.wala.memsat.util.Programs;
+import com.ibm.wala.ssa.SSAFieldAccessInstruction;
+import com.ibm.wala.ssa.SSAGetInstruction;
+import com.ibm.wala.ssa.SSAPutInstruction;
 import com.ibm.wala.util.graph.Graph;
 import com.ibm.wala.util.graph.traverse.DFS;
 
@@ -61,6 +67,9 @@ public final class JMMExecution extends AbstractExecution {
 	private final Formula wellFormed;
 	private final boolean speculative;
 	
+	// Finals
+	private final Expression freezes;
+	
 	/**
 	 * Creates a new JMMExecution for the given program, using the given speculation
 	 * flag and the given suffix in the names of all relations it allocates.
@@ -73,6 +82,11 @@ public final class JMMExecution extends AbstractExecution {
 		
 		this.sw = computeSW(prog);	
 		this.hb = po.union(sw).closure();
+		
+		// TODO @finals should it come after well-formed?
+		this.freezes = computeFreezes(prog);
+		//System.out.println("fz:");
+		//System.out.println(freezes);
 		
 		this.wellFormed = computeWellFormed(prog);
 	}
@@ -115,6 +129,31 @@ public final class JMMExecution extends AbstractExecution {
 			comprehension(a.oneOf(p.allOf(END)).and(b.oneOf(p.allOf(START))));
 
 		return Expression.union(swLocks, swVolatiles, swThreads);
+	}
+	
+	private final Expression computeFreezes(Program p) {
+	  Map<CGNode, InlinedInstruction> freezesByInit = new HashMap<>();
+	  for (InlinedInstruction inst : Programs.instructions(p.info())) {
+	    if (inst.action() == Action.FREEZE) {
+	      freezesByInit.put(inst.cgNode(), inst);
+	    }
+	  }
+	  
+	  List<Expression> fz = new ArrayList<>();
+	  for (InlinedInstruction inst : Programs.instructions(p.info())) {
+	    CGNode node = inst.cgNode();
+	    if (node.getMethod().isInit() && inst.action() != Action.FREEZE) {
+	      if (inst.instruction() instanceof SSAFieldAccessInstruction) {
+          final SSAFieldAccessInstruction access = (SSAFieldAccessInstruction) inst.instruction();
+          if (access instanceof SSAPutInstruction) {
+            InlinedInstruction freeze = freezesByInit.get(node);
+            Expression edge = action(inst).product(action(freeze));
+            fz.add(edge);
+          }
+        }
+	    }
+	  }
+	  return fz.isEmpty() ? Expression.NONE : Expression.union(fz);
 	}
 
 	

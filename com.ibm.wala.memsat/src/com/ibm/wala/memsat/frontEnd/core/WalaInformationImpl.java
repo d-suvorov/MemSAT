@@ -12,12 +12,14 @@ package com.ibm.wala.memsat.frontEnd.core;
 
 import static com.ibm.wala.memsat.util.Strings.prettyPrint;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -475,8 +477,12 @@ public class WalaInformationImpl implements WalaInformation {
 				private final Stack<CallSite> base;
 
 				private final Action action;
-
+				
 				InlinedInstructionImpl(CGNode node, int index, SSACFG.BasicBlock bb, SSAInstruction inst, Stack<CallSite> base) {
+				  this(node, index, bb, inst, base, false);
+				}
+
+				InlinedInstructionImpl(CGNode node, int index, SSACFG.BasicBlock bb, SSAInstruction inst, Stack<CallSite> base, boolean freeze) {
 					this.node = node;
 					this.index = index;
 					this.inst = inst;
@@ -519,7 +525,7 @@ public class WalaInformationImpl implements WalaInformation {
 							this.action = null;
 						}
 					} else {
-						this.action = null;
+						this.action = freeze ? Action.FREEZE : null;
 					}
 				}
 
@@ -687,35 +693,12 @@ public class WalaInformationImpl implements WalaInformation {
 			}
 
 			public Set<InlinedInstruction> actions() {
-				Set<InlinedInstruction> mostActions = instructions(
-						new Function<InlinedInstructionImpl, InlinedInstruction>() {
-							public InlinedInstruction apply(
-									InlinedInstructionImpl x) {
-								if (x.action != null) {
-									return x;
-								} else {
-									return null;
-								}
-							}
-						},
-						new Reduce<InlinedInstruction, Set<InlinedInstruction>>() {
-							public Set<InlinedInstruction> initial() {
-								return new HashSet<InlinedInstruction>();
-							}
-
-							public Set<InlinedInstruction> reduce(
-									InlinedInstruction x,
-									Set<InlinedInstruction> y) {
-								if (x != null) {
-									y.add(x);
-								}
-
-								return y;
-							}
-						}, Recurse.Pre);
-				mostActions.add(start());
-				mostActions.add(end());
-				return mostActions;
+			  // TODO rewrite it more efficiently
+			  Set<InlinedInstruction> res = new HashSet<>();
+			  for (InlinedInstruction instr : threadOrder()) {
+			    res.add(instr);
+			  }
+				return res;
 			}
 
 			//
@@ -821,8 +804,12 @@ public class WalaInformationImpl implements WalaInformation {
 									res.addEdge(p, curr);
 								}
 							}
-						} 
+						}
 						prev = curr;
+					}
+					
+					if (node.getMethod().isInit()) {
+					  res.addNode(freezeInstruction(node));
 					}
 				}
 				
@@ -847,6 +834,13 @@ public class WalaInformationImpl implements WalaInformation {
 								}
 							}
 							
+							// Finals
+							boolean isTargetInit = target.getMethod().isInit();
+							InlinedInstruction freeze = null;
+							if (isTargetInit) {
+							  freeze = freezeInstruction(target);
+							}
+							
 							// Add edges from target to successors of inst in the same node
 							for (InlinedInstruction targetInst : targetInstructions) {
 								if (targetInstructions.getSuccNodeCount(targetInst) == 0) {
@@ -854,7 +848,13 @@ public class WalaInformationImpl implements WalaInformation {
 									while (succIter.hasNext()) {
 										InlinedInstruction succ = succIter.next();
 										if (succ.cgNode().equals(inst.cgNode())) {
-											res.addEdge(targetInst, succ);
+										  if (isTargetInit) {
+										    if (!targetInst.equals(freeze))
+										      res.addEdge(targetInst, freeze);
+										    res.addEdge(freeze, succ);
+										  } else {
+										    res.addEdge(targetInst, succ);
+										  }
 										}
 									}
 								}
@@ -1086,6 +1086,21 @@ public class WalaInformationImpl implements WalaInformation {
 			public InlinedInstruction start() {
 				return new InlinedInstructionImpl(threadRoot,
 						Integer.MIN_VALUE, null, null, new LinkedStack<CallSite>());
+			}
+			
+			@Override
+      public Collection<InlinedInstruction> freezes() {
+			  List<InlinedInstruction> res = new ArrayList<>();
+			  for (CGNode node : callGraph) {
+			    if (node.getMethod().isInit()) {
+			      res.add(freezeInstruction(node));
+			    }
+			  }
+			  return res;
+			}
+			
+			InlinedInstructionImpl freezeInstruction(CGNode node) {
+			  return new InlinedInstructionImpl(node, -1, null, null, new LinkedStack<>(), true);
 			}
 
 			public void computeRelevantStuffInSlice() {
