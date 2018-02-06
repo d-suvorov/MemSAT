@@ -158,6 +158,9 @@ public abstract class JavaMemoryModel implements MemoryModel {
 		ret.add( rule8(prog, main, speculations, commits) );
 		ret.add( rule9(prog, main, speculations, commits) );
 		
+		ret.add( mc1(prog, main) );
+		ret.add( mc2(prog, main) );
+		
 		return Formula.and(ret);
 	}
 	
@@ -321,6 +324,15 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	 */
 	protected abstract Formula rule9(Program prog, JMMExecution main, List<JMMExecution> speculations, List<? extends Expression>  commits);
 	
+	protected Formula mc1(Program prog, JMMExecution main) {
+	  final Variable w = Variable.unary("w"), r = Variable.unary("r");
+	  return r.product(w).in(main.w()).implies(w.product(r).in(main.mc()));
+  }
+	
+	protected Formula mc2(Program prog, JMMExecution main) {
+	  final Variable a = Variable.unary("a"), b = Variable.unary("b");
+	  return a.product(b).in(main.dc()).implies(a.product(b).in(main.mc()));
+	}
 	
 	/**
 	 * {@inheritDoc}

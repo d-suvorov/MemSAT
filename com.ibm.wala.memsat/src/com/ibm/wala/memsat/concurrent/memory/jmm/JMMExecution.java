@@ -69,6 +69,7 @@ public final class JMMExecution extends AbstractExecution {
 	
 	// Finals
 	private final Expression freezes;
+	private final Relation dc, mc;
 	
 	/**
 	 * Creates a new JMMExecution for the given program, using the given speculation
@@ -82,6 +83,9 @@ public final class JMMExecution extends AbstractExecution {
 		
 		this.sw = computeSW(prog);	
 		this.hb = po.union(sw).closure();
+		
+		this.dc = Relation.binary("dc" + suffix);
+		this.mc = Relation.binary("mc" + suffix);
 		
 		// TODO @finals should it come after well-formed?
 		this.freezes = computeFreezes(prog);
@@ -308,6 +312,10 @@ public final class JMMExecution extends AbstractExecution {
 	 * @return this.sw
 	 */
 	public Expression sw() { return sw; }
+	
+	public Relation dc() { return dc; }
+	
+	public Relation mc() { return mc; }
 
 	/**
 	 * Returns a formula that evaluates to true iff this execution is well-formed
