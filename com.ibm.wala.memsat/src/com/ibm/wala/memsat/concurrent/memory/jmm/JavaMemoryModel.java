@@ -16,6 +16,7 @@ package com.ibm.wala.memsat.concurrent.memory.jmm;
 import static com.ibm.wala.memsat.frontEnd.InlinedInstruction.Action.END;
 import static com.ibm.wala.memsat.frontEnd.InlinedInstruction.Action.LOCK;
 import static com.ibm.wala.memsat.frontEnd.InlinedInstruction.Action.NORMAL_READ;
+import static com.ibm.wala.memsat.frontEnd.InlinedInstruction.Action.NORMAL_WRITE;
 import static com.ibm.wala.memsat.frontEnd.InlinedInstruction.Action.START;
 import static com.ibm.wala.memsat.frontEnd.InlinedInstruction.Action.UNLOCK;
 import static com.ibm.wala.memsat.frontEnd.InlinedInstruction.Action.VOLATILE_READ;
@@ -29,22 +30,37 @@ import static com.ibm.wala.memsat.util.Programs.instructions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.ibm.wala.classLoader.NewSiteReference;
+import com.ibm.wala.ipa.callgraph.CGNode;
+import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.memsat.concurrent.Execution;
 import com.ibm.wala.memsat.concurrent.Justification;
 import com.ibm.wala.memsat.concurrent.MemoryModel;
 import com.ibm.wala.memsat.concurrent.Program;
 import com.ibm.wala.memsat.concurrent.Program.BoundsBuilder;
+import com.ibm.wala.memsat.concurrent.memory.AbstractExecution;
 import com.ibm.wala.memsat.frontEnd.InlinedInstruction;
+import com.ibm.wala.memsat.frontEnd.WalaConcurrentInformation;
 import com.ibm.wala.memsat.frontEnd.WalaInformation;
+import com.ibm.wala.memsat.frontEnd.InlinedInstruction.Action;
+import com.ibm.wala.memsat.util.Graphs;
+import com.ibm.wala.memsat.util.Programs;
+import com.ibm.wala.ssa.SSAFieldAccessInstruction;
+import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
+import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.graph.Graph;
+import com.ibm.wala.util.graph.impl.SlowSparseNumberedGraph;
 
+import edu.emory.mathcs.backport.java.util.Arrays;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
+import kodkod.ast.IntConstant;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.instance.Bounds;
@@ -107,8 +123,110 @@ public abstract class JavaMemoryModel implements MemoryModel {
 			builder.boundActions(commits.get(i), all);
 		}
 		
+		Graph<InlinedInstruction> dc = dereferenceUpperBound(info);
+		builder.boundOrdering(main.dc(), dc);
+		for (JMMExecution exec : speculations) {
+		  builder.boundOrdering(exec.dc(), SlowSparseNumberedGraph.make());
+		}
+		
+		List<Graph<InlinedInstruction>> mcl = new ArrayList<>();
+		mcl.add(memoryChainUpperBound(info));
+		mcl.add(dc);
+		mcl.add(revert(Programs.visibleWrites(info)));
+		Graph<InlinedInstruction> mc = Graphs.union(mcl);
+		builder.boundOrdering(main.mc(), mc);
+    for (JMMExecution exec : speculations) {
+      builder.boundOrdering(exec.mc(), SlowSparseNumberedGraph.make());
+    }
+		
 		return builder.build();
 	}
+	
+	// TODO Move somewhere
+	private <T> Graph<T> revert(Graph<T> g) {
+	  Graph<T> res = SlowSparseNumberedGraph.make();
+	  for (T n : g) {
+	    res.addNode(n);
+	  }
+	  for (T n : g) {
+	    for(Iterator<? extends T> itr = g.getSuccNodes(n); itr.hasNext(); ) { 
+        T succ = itr.next();
+        res.addEdge(succ, n);
+      }
+	  }
+	  return res;
+	}
+	
+	// TODO initialized by other thread
+	private Graph<InlinedInstruction> dereferenceUpperBound(WalaInformation info) {
+	  Graph<InlinedInstruction> res = SlowSparseNumberedGraph.make();
+    for (CGNode t : info.threads()) {
+      WalaConcurrentInformation cInfo = info.concurrentInformation(t);
+      Set<InlinedInstruction> actions = cInfo.actions();
+      for (InlinedInstruction inst : actions) {
+        if (!(inst.instruction() instanceof SSAFieldAccessInstruction))
+          continue;
+        Set<InstanceKey> instances = Programs.referencedInstance(info, inst);
+        for (InlinedInstruction read : actions) {
+          if (!read.equals(inst) && isRead(read)) {
+            Set<InstanceKey> values = Programs.valueFor(info, read);
+            /*values.retainAll(instances);
+            boolean sameInstance = !values.isEmpty()*/
+            boolean sameInstance = false;
+            if (instances.size() == 1 && values.size() == 1) {
+              InstanceKey instanceKey = instances.iterator().next();
+              sameInstance = instanceKey.equals(values.iterator().next());
+            }
+            if (sameInstance) {
+              res.addNode(read);
+              res.addNode(inst);
+              res.addEdge(read, inst);
+            }
+          }
+        }
+      }
+    }
+    return res;
+	}
+	
+	private Graph<InlinedInstruction> memoryChainUpperBound(WalaInformation info) {
+	  Graph<InlinedInstruction> res = SlowSparseNumberedGraph.make();
+	  for (CGNode t : info.threads()) {
+      WalaConcurrentInformation cInfo = info.concurrentInformation(t);
+      Set<InlinedInstruction> actions = cInfo.actions();
+      for (InlinedInstruction inst : actions) {
+        if (!isWrite(inst))
+          continue;
+        Set<InstanceKey> instances = Programs.valueFor(info, inst);
+        for (InlinedInstruction read : actions) {
+          if (!read.equals(inst) && isRead(read)) {
+            Set<InstanceKey> values = Programs.valueFor(info, read);
+            /*values.retainAll(instances);
+            boolean sameInstance = !values.isEmpty()*/
+            boolean sameInstance = false;
+            if (instances.size() == 1 && values.size() == 1) {
+              InstanceKey instanceKey = instances.iterator().next();
+              sameInstance = instanceKey.equals(values.iterator().next());
+            }
+            if (sameInstance) {
+              res.addNode(read);
+              res.addNode(inst);
+              res.addEdge(read, inst);
+            }
+          }
+        }
+      }
+    }
+	  return res;
+	}
+	
+	private boolean isRead(InlinedInstruction inst) {
+	  return inst.action() == NORMAL_READ || inst.action() == VOLATILE_READ;
+	}
+	
+	private boolean isWrite(InlinedInstruction inst) {
+    return inst.action() == NORMAL_WRITE || inst.action() == VOLATILE_WRITE;
+  }
 	
 	/**
 	 * Returns a sequence of freshly created commit sets.
@@ -129,7 +247,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	 * @return the legality formula for the given program, main execution, speculations and commits.
 	 */
 	private final Formula legal(Program prog, JMMExecution main, List<JMMExecution> speculations, List<Relation> commits) { 
-		final Collection<Formula> ret = new ArrayList<Formula>(30);
+		final Collection<Formula> ret = new ArrayList<Formula>(34);
 		
 		// all executions are well formed
 		ret.add( main.wellFormed() );
@@ -158,8 +276,10 @@ public abstract class JavaMemoryModel implements MemoryModel {
 		ret.add( rule8(prog, main, speculations, commits) );
 		ret.add( rule9(prog, main, speculations, commits) );
 		
+		ret.add( dc1(prog, main) );
 		ret.add( mc1(prog, main) );
 		ret.add( mc2(prog, main) );
+		ret.add( mc3(prog, main) );
 		
 		return Formula.and(ret);
 	}
@@ -324,15 +444,69 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	 */
 	protected abstract Formula rule9(Program prog, JMMExecution main, List<JMMExecution> speculations, List<? extends Expression>  commits);
 	
+	protected Formula dc1(Program prog, JMMExecution main) {
+	  Variable a = Variable.unary("a"), r = Variable.unary("r");
+	  
+	  Formula fieldAccess = main.locationOf(a).count().eq(IntConstant.constant(2));
+	  Expression valueRead = main.v(main.w(r)); 
+	  Formula seesObject = valueRead.in(prog.instances());
+	  Formula sameObject = valueRead.in(main.locationOf(a));
+	  Formula sameThread = prog.threadOf(a).eq(prog.threadOf(r));
+	  
+	  Formula existRead = seesObject
+	    .and(sameObject).and(sameThread)
+	    .and(r.product(a).in(main.dc()))
+	      .forSome(r.oneOf(reads(prog)));
+	  
+	  return fieldAccess.implies(existRead)
+	    .forAll(a.oneOf(prog.allOf(
+	      NORMAL_READ, NORMAL_WRITE, VOLATILE_READ, VOLATILE_WRITE)));
+	}
+	
 	protected Formula mc1(Program prog, JMMExecution main) {
-	  final Variable w = Variable.unary("w"), r = Variable.unary("r");
-	  return r.product(w).in(main.w()).implies(w.product(r).in(main.mc()));
+	  Variable w = Variable.unary("w"), r = Variable.unary("r");
+	  Formula lhs = r.product(w).in(main.w());
+	  Formula rhs = w.product(r).in(main.mc());
+	  return lhs.implies(rhs).forAll(
+	    w.oneOf(writes(prog)).and(
+	      r.oneOf(reads(prog))));
   }
 	
 	protected Formula mc2(Program prog, JMMExecution main) {
-	  final Variable a = Variable.unary("a"), b = Variable.unary("b");
-	  return a.product(b).in(main.dc()).implies(a.product(b).in(main.mc()));
+	  Variable r = Variable.unary("r"), a = Variable.unary("a");
+	  Formula lhs = r.product(a).in(main.dc());
+	  Formula rhs = r.product(a).in(main.mc());
+	  return lhs.implies(rhs).forAll(
+	    r.oneOf(prog.allOf(Action.values())).and(
+	      a.oneOf(prog.allOf(Action.values()))));
 	}
+	
+	protected Formula mc3(Program prog, JMMExecution main) {
+	  Variable w = Variable.unary("w"), r = Variable.unary("r");
+	  
+    Formula writesObject = main.v(w).in(prog.instances());
+    Formula sameValue = main.v(w).eq(valuesRead(main, r));
+    Formula sameThread = prog.threadOf(w).eq(prog.threadOf(r));
+    
+    Formula existRead = sameValue.and(sameThread)
+      .and(r.product(w).in(main.mc()))
+        .forSome(r.oneOf(reads(prog)));
+    
+    return writesObject.implies(existRead)
+      .forAll(w.oneOf(writes(prog)));
+	}
+	
+	private Expression reads(Program prog) {
+	  return prog.allOf(NORMAL_READ, VOLATILE_READ);
+	}
+	
+	private Expression writes(Program prog) {
+	  return prog.allOf(NORMAL_WRITE, VOLATILE_WRITE);
+	}
+	
+	private Expression valuesRead(AbstractExecution exec, Expression r) {
+    return exec.v(exec.w(r));
+  }
 	
 	/**
 	 * {@inheritDoc}

@@ -207,6 +207,16 @@ public final class ConstantFactory {
 		}
 		return s;
 	}
+	
+  public  TupleSet instanceAtoms(TupleFactory factory) {
+	  final TupleSet s = factory.noneOf(1);
+    for(Relation[] instances : instances.values()) {
+      for (Relation instance : instances) {
+        s.add(factory.tuple(instance));
+      }
+    }
+    return s;
+	}
 
 	/**
 	 * Returns a tupleset containing all instances (atoms) of the given type partition

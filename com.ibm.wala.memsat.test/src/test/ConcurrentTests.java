@@ -121,22 +121,22 @@ public abstract class ConcurrentTests {
 				final long corestart = System.currentTimeMillis();
 				solution.proof().minimize(new RCEStrategy(solution.proof().log()));
 				core = System.currentTimeMillis() - corestart;
-				/*
+				
 				System.out.println("CORE: ");
 				System.out.println(Strings.prettyPrint(solution.proof().highLevelCore().values(), 2, 200, display));
-				*/
+				
 			} else {
 				core = 0;
 				System.out.println("Outcome: "+solution.outcome());
 				System.out.println(solution.stats());
-				/*
+				
 				for(Relation r : solution.instance().relations()) { 
 					System.out.println(r + " = " + solution.instance().tuples(r));
 				}
 				System.out.println("\n****************");
 				System.out.println(solution.instance().universe());
 				System.out.println(results);
-				*/
+				
 			}
 //			System.out.println(results);
 			

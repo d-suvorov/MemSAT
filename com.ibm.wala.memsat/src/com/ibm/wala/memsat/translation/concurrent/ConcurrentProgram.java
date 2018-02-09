@@ -58,6 +58,8 @@ final class ConcurrentProgram implements Program {
 	private final Map<CGNode, Relation> threads;
 	private final Relation /* Action ->one Thread */ thread;
 	private final Relation /* Thread -> Thread */ endsBefore;
+	private final Relation instances;
+	
 	/**
 	 * Constructs a new ConcurrentProgram using the provided memory handler and translation that
 	 * were generation using the given handler.
@@ -77,6 +79,7 @@ final class ConcurrentProgram implements Program {
 		
 		this.thread = Relation.binary("thread");	
 		this.endsBefore = Relation.binary("endsBefore");
+		this.instances = Relation.unary("instances");
 	}
 
 	/**
@@ -128,6 +131,9 @@ final class ConcurrentProgram implements Program {
 	 * @see com.ibm.wala.memsat.concurrent.Program#endsBefore()
 	 */
 	public Expression endsBefore() { return endsBefore; }
+	
+	@Override
+	public Expression instances() { return instances; }
 	
 	/**
 	 * {@inheritDoc}
@@ -231,6 +237,7 @@ final class ConcurrentProgram implements Program {
 		factory.boundAll(bounds);
 		boundThreads(bounds);
 		boundEndsBefore(bounds);
+		boundInstances(bounds);
 		
 		return new ConcurrentBoundsBuilder(bounds, factory);
 	}
@@ -273,5 +280,9 @@ final class ConcurrentProgram implements Program {
 		bounds.boundExactly(endsBefore, endsBound);
 	}
 
-	
+	private final void boundInstances(Bounds bounds) {
+	  final TupleFactory tuples = bounds.universe().factory();
+	  TupleSet instancesBounds = factory.base().constants().instanceAtoms(tuples);
+	  bounds.boundExactly(instances, instancesBounds);
+	}
 }
