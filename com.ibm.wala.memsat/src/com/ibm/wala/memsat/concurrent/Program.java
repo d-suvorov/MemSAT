@@ -156,7 +156,9 @@ public interface Program {
 		 * @effects this.bounds.upperBound' = this.bounds.upperBound' ++ 
 		 *  r->{t: Tuple | some i: upper | this.upper[i].contains(t)}
 		 */
-		public abstract void boundActions(Relation r, Set<InlinedInstruction> insts);	
+		public abstract void boundActions(Relation r, Set<InlinedInstruction> insts);
+		
+		public abstract void boundTest(Relation r, Set<InlinedInstruction> insts); 
 		
 		/**
 		 * Returns the built bounds.

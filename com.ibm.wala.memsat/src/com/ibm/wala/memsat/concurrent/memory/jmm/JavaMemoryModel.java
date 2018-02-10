@@ -138,6 +138,11 @@ public abstract class JavaMemoryModel implements MemoryModel {
     for (JMMExecution exec : speculations) {
       builder.boundOrdering(exec.mc(), SlowSparseNumberedGraph.make());
     }
+    
+    builder.boundTest(main.test(), all);
+    for (JMMExecution exec : speculations) {
+      builder.boundTest(exec.test(), Collections.EMPTY_SET);
+    }
 		
 		return builder.build();
 	}
@@ -460,7 +465,11 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	    .and(r.product(a).in(main.dc()))
 	      .forSome(r.oneOf(reads(prog)));
 	  
-	  return fieldAccess.and(initializedByOtherThread).implies(existRead)
+	  /*return fieldAccess.and(initializedByOtherThread).implies(existRead)
+	    .forAll(a.oneOf(prog.allOf(
+	      NORMAL_READ, NORMAL_WRITE, VOLATILE_READ, VOLATILE_WRITE)));*/
+	  
+	  return fieldAccess.and(initializedByOtherThread).implies(a.in(main.test()))
 	    .forAll(a.oneOf(prog.allOf(
 	      NORMAL_READ, NORMAL_WRITE, VOLATILE_READ, VOLATILE_WRITE)));
 	}
