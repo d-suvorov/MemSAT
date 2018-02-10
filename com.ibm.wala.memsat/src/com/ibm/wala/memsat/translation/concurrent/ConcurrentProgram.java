@@ -24,7 +24,9 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.ibm.wala.classLoader.NewSiteReference;
 import com.ibm.wala.ipa.callgraph.CGNode;
+import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.memsat.concurrent.Execution;
 import com.ibm.wala.memsat.concurrent.Program;
 import com.ibm.wala.memsat.frontEnd.InlinedInstruction;
@@ -33,6 +35,7 @@ import com.ibm.wala.memsat.frontEnd.WalaConcurrentInformation;
 import com.ibm.wala.memsat.frontEnd.WalaInformation;
 import com.ibm.wala.memsat.translation.MethodTranslation;
 import com.ibm.wala.memsat.util.Nodes;
+import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.graph.Graph;
 import com.ibm.wala.util.graph.traverse.DFS;
 
@@ -59,6 +62,7 @@ final class ConcurrentProgram implements Program {
 	private final Relation /* Action ->one Thread */ thread;
 	private final Relation /* Thread -> Thread */ endsBefore;
 	private final Relation instances;
+	private final Relation constructs;
 	
 	/**
 	 * Constructs a new ConcurrentProgram using the provided memory handler and translation that
@@ -80,6 +84,7 @@ final class ConcurrentProgram implements Program {
 		this.thread = Relation.binary("thread");	
 		this.endsBefore = Relation.binary("endsBefore");
 		this.instances = Relation.unary("instances");
+		this.constructs = Relation.binary("constructs");
 	}
 
 	/**
@@ -134,6 +139,9 @@ final class ConcurrentProgram implements Program {
 	
 	@Override
 	public Expression instances() { return instances; }
+	
+	@Override
+	public Expression constructs() { return constructs; }
 	
 	/**
 	 * {@inheritDoc}
@@ -238,6 +246,7 @@ final class ConcurrentProgram implements Program {
 		boundThreads(bounds);
 		boundEndsBefore(bounds);
 		boundInstances(bounds);
+		boundConstructs(bounds);
 		
 		return new ConcurrentBoundsBuilder(bounds, factory);
 	}
@@ -284,5 +293,11 @@ final class ConcurrentProgram implements Program {
 	  final TupleFactory tuples = bounds.universe().factory();
 	  TupleSet instancesBounds = factory.base().constants().instanceAtoms(tuples);
 	  bounds.boundExactly(instances, instancesBounds);
+	}
+	
+	private final void boundConstructs(Bounds bounds) {
+	  final TupleFactory tuples = bounds.universe().factory();
+	  TupleSet cBounds = factory.base().constants().constructsBounds(tuples, info);
+    bounds.boundExactly(constructs, cBounds);
 	}
 }

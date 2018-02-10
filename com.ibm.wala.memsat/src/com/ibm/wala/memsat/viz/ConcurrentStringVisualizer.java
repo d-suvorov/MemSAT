@@ -195,7 +195,9 @@ final class ConcurrentStringVisualizer extends StringVisualizer<ConcurrentTransl
 				if (eval.evaluate(exec.action(inst).some())) { 
 					final String methodString = methodNames.get(inst.cgNode());
 					final String instString = instruction(exec, inst);
-					final String lineString = line(inst.cgNode().getMethod(), inst.instructionIndex());
+					final String lineString = inst.action() != Action.FREEZE
+					  ? line(inst.cgNode().getMethod(), inst.instructionIndex())
+					  : "freeze";
 					ret.put(inst, methodString + "[" + lineString + "]::" + instString);
 				}
 			}
@@ -227,6 +229,8 @@ final class ConcurrentStringVisualizer extends StringVisualizer<ConcurrentTransl
 			final Interpreter<Object> writer = valueInterpreter(inst);
 			final Object writeVal = writer.evaluate(writer.fromObj(exec.action(inst).join(exec.v())), eval);
 			return "write(" + writeLoc + ", " + writeVal + ")";
+		case FREEZE:
+		  return act.name().toLowerCase() + "(" + inst.cgNode()  + ")";
 		default : 
 			throw new AssertionError("unreachable");
 		}

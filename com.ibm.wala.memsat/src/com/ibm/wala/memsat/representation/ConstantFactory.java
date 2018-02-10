@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.ibm.wala.classLoader.NewSiteReference;
+import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.memsat.Options;
@@ -34,7 +36,10 @@ import com.ibm.wala.memsat.frontEnd.IRType;
 import com.ibm.wala.memsat.frontEnd.WalaInformation;
 import com.ibm.wala.memsat.util.Strings;
 import com.ibm.wala.types.TypeReference;
+import com.ibm.wala.util.collections.Pair;
+import com.ibm.wala.util.graph.traverse.DFS;
 
+import edu.emory.mathcs.backport.java.util.Collections;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IntConstant;
@@ -208,7 +213,7 @@ public final class ConstantFactory {
 		return s;
 	}
 	
-  public  TupleSet instanceAtoms(TupleFactory factory) {
+  public TupleSet instanceAtoms(TupleFactory factory) {
 	  final TupleSet s = factory.noneOf(1);
     for(Relation[] instances : instances.values()) {
       for (Relation instance : instances) {
@@ -217,6 +222,37 @@ public final class ConstantFactory {
     }
     return s;
 	}
+  
+  public TupleSet constructsBounds(TupleFactory factory, WalaInformation info) {
+    final TupleSet s = factory.noneOf(2);
+    for (InstanceKey ik : instances.keySet()) {
+      Iterator<Pair<CGNode, NewSiteReference>> itr;
+      for (itr = ik.getCreationSites(info.callGraph()); itr.hasNext(); ) {
+        CGNode crNode = itr.next().fst;
+        CGNode root = threadRootByNode(info, crNode);
+        if (root == null)
+          continue;
+        for (Relation instance : instances.get(ik)) {
+          s.add(factory.tuple(instance, root));
+        }
+      }
+    }
+    return s;
+  }
+  
+  private CGNode threadRootByNode(WalaInformation info, CGNode node) {
+    Set<CGNode> candidates = new HashSet<>();
+    for (CGNode root : info.threads()) {
+      Set<CGNode> start = new HashSet<>(Collections.singleton(root));
+      Collection<CGNode> reachable =
+        DFS.getReachableNodes(info.callGraph(), start);
+      if (reachable.contains(node))
+        candidates.add(root);
+    }
+    if (candidates.size() != 1)
+      return null;
+    return candidates.iterator().next();
+  }
 
 	/**
 	 * Returns a tupleset containing all instances (atoms) of the given type partition

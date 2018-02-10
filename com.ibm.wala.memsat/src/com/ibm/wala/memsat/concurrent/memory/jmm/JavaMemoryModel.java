@@ -448,7 +448,9 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	  Variable a = Variable.unary("a"), r = Variable.unary("r");
 	  
 	  Formula fieldAccess = main.locationOf(a).count().eq(IntConstant.constant(2));
-	  Expression valueRead = main.v(main.w(r)); 
+	  Formula initializedByOtherThread = main.locationOf(a).join(prog.constructs())
+	    .eq(prog.threadOf(a)).not();
+	  Expression valueRead = main.v(main.w(r));
 	  Formula seesObject = valueRead.in(prog.instances());
 	  Formula sameObject = valueRead.in(main.locationOf(a));
 	  Formula sameThread = prog.threadOf(a).eq(prog.threadOf(r));
@@ -458,7 +460,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	    .and(r.product(a).in(main.dc()))
 	      .forSome(r.oneOf(reads(prog)));
 	  
-	  return fieldAccess.implies(existRead)
+	  return fieldAccess.and(initializedByOtherThread).implies(existRead)
 	    .forAll(a.oneOf(prog.allOf(
 	      NORMAL_READ, NORMAL_WRITE, VOLATILE_READ, VOLATILE_WRITE)));
 	}
@@ -484,15 +486,18 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	protected Formula mc3(Program prog, JMMExecution main) {
 	  Variable w = Variable.unary("w"), r = Variable.unary("r");
 	  
-    Formula writesObject = main.v(w).in(prog.instances());
-    Formula sameValue = main.v(w).eq(valuesRead(main, r));
+	  Expression writtenValue = main.v(w);
+    Formula writesObject = writtenValue.in(prog.instances());
+    Formula initializedByOtherThread = writtenValue.join(prog.constructs())
+      .eq(prog.threadOf(w)).not();
+    Formula sameValue = writtenValue.eq(valuesRead(main, r));
     Formula sameThread = prog.threadOf(w).eq(prog.threadOf(r));
     
     Formula existRead = sameValue.and(sameThread)
       .and(r.product(w).in(main.mc()))
         .forSome(r.oneOf(reads(prog)));
     
-    return writesObject.implies(existRead)
+    return writesObject.and(initializedByOtherThread).implies(existRead)
       .forAll(w.oneOf(writes(prog)));
 	}
 	

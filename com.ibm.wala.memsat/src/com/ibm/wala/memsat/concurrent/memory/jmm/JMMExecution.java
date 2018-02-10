@@ -330,7 +330,10 @@ public final class JMMExecution extends AbstractExecution {
 	 * @see com.ibm.wala.memsat.concurrent.Execution#viz()
 	 */
 	public Map<Expression, String> viz() {
-		return Collections.singletonMap(Nodes.transitiveReduction(hb).difference(Expression.IDEN), "happensBefore");
+	  Map<Expression, String> res = new HashMap<>();
+	  res.put(Nodes.transitiveReduction(hb).difference(Expression.IDEN), "happensBefore");
+	  res.put(mc, "memoryChain");
+	  return res;
 	}
 
 
