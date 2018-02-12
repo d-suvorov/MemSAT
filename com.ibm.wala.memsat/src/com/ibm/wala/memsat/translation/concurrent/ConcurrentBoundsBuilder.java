@@ -99,15 +99,6 @@ final class ConcurrentBoundsBuilder implements BoundsBuilder {
 		}
 		bounds.bound(r,u);
 	}
-	
-	@Override
-	public void boundTest(Relation test, Set<InlinedInstruction> insts) {
-	  final TupleSet u = tuples.noneOf(1);
-    for(InlinedInstruction inst : insts) { 
-      u.addAll( actionAtoms(inst) );
-    }
-    bounds.bound(test, u);
-	}
 
 	/**
 	 * {@inheritDoc}

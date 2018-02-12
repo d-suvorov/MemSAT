@@ -158,8 +158,6 @@ public interface Program {
 		 */
 		public abstract void boundActions(Relation r, Set<InlinedInstruction> insts);
 		
-		public abstract void boundTest(Relation r, Set<InlinedInstruction> insts); 
-		
 		/**
 		 * Returns the built bounds.
 		 * @return this.bounds

@@ -71,8 +71,6 @@ public final class JMMExecution extends AbstractExecution {
 	private final Expression freezes;
 	private final Relation dc, mc;
 	
-	private final Relation test;
-	
 	/**
 	 * Creates a new JMMExecution for the given program, using the given speculation
 	 * flag and the given suffix in the names of all relations it allocates.
@@ -88,7 +86,6 @@ public final class JMMExecution extends AbstractExecution {
 		
 		this.dc = Relation.binary("dc" + suffix);
 		this.mc = Relation.binary("mc" + suffix);
-		this.test = Relation.unary("test" + suffix);
 		
 		// TODO @finals should it come after well-formed?
 		this.freezes = computeFreezes(prog);
@@ -319,8 +316,6 @@ public final class JMMExecution extends AbstractExecution {
 	public Relation dc() { return dc; }
 	
 	public Relation mc() { return mc; }
-	
-	public Relation test() { return test; }
 
 	/**
 	 * Returns a formula that evaluates to true iff this execution is well-formed
