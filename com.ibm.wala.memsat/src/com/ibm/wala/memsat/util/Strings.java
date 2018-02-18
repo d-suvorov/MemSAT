@@ -359,6 +359,8 @@ public final class Strings {
 						b.append("_" + methodNames.get(itr.next().getNode()));
 					}
 					b.append("_" + entry.getKey());
+					int pc = inst.callStack().peek().fst.getProgramCounter();
+					b.append("@").append(pc);
 					inst2Name.put(inst, b.toString());
 				}
 			}

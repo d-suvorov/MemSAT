@@ -809,7 +809,7 @@ public class WalaInformationImpl implements WalaInformation {
 					}
 					
 					if (node.getMethod().isInit()) {
-					  res.addNode(freezeInstruction(node));
+					  res.addNode(freezeInstruction(node, currentStack));
 					}
 				}
 				
@@ -826,7 +826,13 @@ public class WalaInformationImpl implements WalaInformation {
 						
 						for (CGNode target : callGraph.getPossibleTargets(inst.cgNode(), x)) {
 							Graph<InlinedInstruction> targetInstructions =
-									GraphSlicer.prune(res, i -> i.cgNode().equals(target));
+							  GraphSlicer.prune(res, i -> {
+							    if (!i.cgNode().equals(target))
+							      return false;
+							    CallSite callSite = ((InlinedInstructionImpl) i).base.peek();
+							    return callSite.fst.equals(x);
+							  });
+
 							// Add edges to target
 							for (InlinedInstruction targetInst : targetInstructions) {
 								if (targetInstructions.getPredNodeCount(targetInst) == 0) {
@@ -838,7 +844,8 @@ public class WalaInformationImpl implements WalaInformation {
 							boolean isTargetInit = target.getMethod().isInit();
 							InlinedInstruction freeze = null;
 							if (isTargetInit) {
-							  freeze = freezeInstruction(target);
+							  Stack<CallSite> calleeStack = makeCalleeStack(inst.callStack(), x, inst.cgNode());
+							  freeze = freezeInstruction(target, calleeStack);
 							}
 							
 							// Add edges from target to successors of inst in the same node
@@ -1090,17 +1097,17 @@ public class WalaInformationImpl implements WalaInformation {
 			
 			@Override
       public Collection<InlinedInstruction> freezes() {
-			  List<InlinedInstruction> res = new ArrayList<>();
-			  for (CGNode node : callGraph) {
-			    if (node.getMethod().isInit()) {
-			      res.add(freezeInstruction(node));
+			  Collection<InlinedInstruction> res = new HashSet<>();
+			  for (InlinedInstruction ii : threadOrder()) {
+			    if (ii.action() == Action.FREEZE) {
+			      res.add(ii);
 			    }
 			  }
 			  return res;
 			}
 			
-			InlinedInstructionImpl freezeInstruction(CGNode node) {
-			  return new InlinedInstructionImpl(node, -1, null, null, new LinkedStack<>(), true);
+			InlinedInstructionImpl freezeInstruction(CGNode node, Stack<CallSite> stack) {
+			  return new InlinedInstructionImpl(node, -1, null, null, stack, true);
 			}
 
 			public void computeRelevantStuffInSlice() {
