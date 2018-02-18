@@ -124,7 +124,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 		}
 		
 		Graph<InlinedInstruction> dc = dereferenceUpperBound(info);
-		builder.boundOrdering(main.dc(), dc);
+		builder.boundReflexiveOrdering(main.dc(), dc);
 		for (JMMExecution exec : speculations) {
 		  builder.boundOrdering(exec.dc(), SlowSparseNumberedGraph.make());
 		}
@@ -134,7 +134,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 		mcl.add(dc);
 		mcl.add(revert(Programs.visibleWrites(info)));
 		Graph<InlinedInstruction> mc = Graphs.union(mcl);
-		builder.boundOrdering(main.mc(), mc);
+		builder.boundReflexiveOrdering(main.mc(), mc);
     for (JMMExecution exec : speculations) {
       builder.boundOrdering(exec.mc(), SlowSparseNumberedGraph.make());
     }
@@ -247,7 +247,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	 * @return the legality formula for the given program, main execution, speculations and commits.
 	 */
 	private final Formula legal(Program prog, JMMExecution main, List<JMMExecution> speculations, List<Relation> commits) { 
-		final Collection<Formula> ret = new ArrayList<Formula>(34);
+		final Collection<Formula> ret = new ArrayList<Formula>(36);
 		
 		// all executions are well formed
 		ret.add( main.wellFormed() );
@@ -276,6 +276,8 @@ public abstract class JavaMemoryModel implements MemoryModel {
 		ret.add( rule8(prog, main, speculations, commits) );
 		ret.add( rule9(prog, main, speculations, commits) );
 		
+		ret.add( partialOrderOver(main.dc(), main.actions()) );
+		ret.add( partialOrderOver(main.mc(), main.actions()) );
 		ret.add( dc1(prog, main) );
 		ret.add( mc1(prog, main) );
 		ret.add( mc2(prog, main) );
@@ -463,6 +465,22 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	  return fieldAccess.and(initializedByOtherThread).implies(existRead)
 	    .forAll(a.oneOf(prog.allOf(
 	      NORMAL_READ, NORMAL_WRITE, VOLATILE_READ, VOLATILE_WRITE)));
+	}
+	
+	private Formula partialOrderOver(Relation ord, Expression universe) {
+	  Variable a = Variable.unary("a");
+	  Variable b = Variable.unary("b");
+	  
+	  Formula reflexive = a.product(a).in(ord).forAll(a.oneOf(universe));
+	  
+	  Formula antisymmetric = (a.product(b).in(ord).and(b.product(a).in(ord)))
+	    .implies(a.eq(b))
+	      .forAll(a.oneOf(universe).and(b.oneOf(universe)));
+	  
+	  final Expression proj = ord.intersection(universe.product(universe));
+	  Formula transitive = proj.join(proj).in(proj);
+	  
+	  return Formula.and(reflexive, antisymmetric, transitive);
 	}
 	
 	protected Formula mc1(Program prog, JMMExecution main) {

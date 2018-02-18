@@ -36,6 +36,7 @@ import com.ibm.wala.util.graph.Graph;
 
 import kodkod.ast.Relation;
 import kodkod.instance.Bounds;
+import kodkod.instance.Tuple;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 
@@ -114,6 +115,21 @@ final class ConcurrentBoundsBuilder implements BoundsBuilder {
 		}
 		bounds.bound(r,u);
 	}
+	
+	@Override
+	public void boundReflexiveOrdering(Relation r, Graph<InlinedInstruction> insts) {
+	  final TupleSet u = tuples.noneOf(2);
+    for(InlinedInstruction inst : insts) { 
+      for(Iterator<? extends InlinedInstruction> succs = insts.getSuccNodes(inst); succs.hasNext(); ) { 
+        final InlinedInstruction succ = succs.next();
+        u.addAll( actionAtoms(inst).product(actionAtoms(succ)) );
+      }
+    }
+    
+    TupleSet l = factory.reflexiveBounds(tuples);
+    u.addAll(l);
+    bounds.bound(r, l, u);
+  }
 
 	/**
 	 * {@inheritDoc}

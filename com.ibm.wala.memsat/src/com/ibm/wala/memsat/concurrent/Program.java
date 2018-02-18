@@ -148,6 +148,8 @@ public interface Program {
 		 */
 		public abstract void boundOrdering(Relation r, Graph<InlinedInstruction> upper);
 		
+		public abstract void boundReflexiveOrdering(Relation r, Graph<InlinedInstruction> upper);
+		
 		/**
 		 * Bounds the given relation from above using the upper bounds on the given instructions.
 		 * @requires r.arity = 1

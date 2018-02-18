@@ -307,6 +307,16 @@ final class ConcurrentFactory {
 		return tupleset(tuples, instAtoms.get(inst));
 	}
 	
+	public final TupleSet reflexiveBounds(TupleFactory tuples) {
+	  TupleSet res = tuples.noneOf(2);
+	  for (Set<?> atoms : instAtoms.values()) {
+	    for (Object atom : atoms) {
+	      res.add(tuples.tuple(atom, atom));
+	    }
+	  }
+	  return res;
+	}
+	
 	/**
 	 * Returns a tupleset containing the set of atoms that describe the locations
 	 * that the given read/write instruction may access.
