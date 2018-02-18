@@ -571,7 +571,7 @@ final class ConcurrentFactory {
 				return false;
 			final Effects other = (Effects) obj;
 			return action.equals(other.action) && thread.equals(other.thread) && 
-				   Objects.equals(location, equals(other.location)) && instances.equals(other.instances);
+				   Objects.equals(location, other.location) && instances.equals(other.instances);
 		}
 		
 	}
