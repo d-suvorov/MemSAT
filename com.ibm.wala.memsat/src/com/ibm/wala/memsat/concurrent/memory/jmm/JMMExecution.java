@@ -332,6 +332,7 @@ public final class JMMExecution extends AbstractExecution {
 	public Map<Expression, String> viz() {
 	  Map<Expression, String> res = new HashMap<>();
 	  res.put(Nodes.transitiveReduction(hb).difference(Expression.IDEN), "happensBefore");
+	  res.put(Nodes.transitiveReduction(so).difference(Expression.IDEN), "synchronizationOrder");
 	  res.put(mc, "memoryChain");
 	  return res;
 	}
