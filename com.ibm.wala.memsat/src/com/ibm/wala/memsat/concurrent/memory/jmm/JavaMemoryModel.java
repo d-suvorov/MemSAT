@@ -279,9 +279,9 @@ public abstract class JavaMemoryModel implements MemoryModel {
 		ret.add( partialOrderOver(main.dc(), main.actions()) );
 		ret.add( partialOrderOver(main.mc(), main.actions()) );
 		// ret.add( dc1(prog, main) );
-		// ret.add( mc1(prog, main) );
-		// ret.add( mc2(prog, main) );
-		// ret.add( mc3(prog, main) );
+		ret.add( mc1(prog, main) );
+		ret.add( mc2(prog, main) );
+		ret.add( mc3(prog, main) );
 		
 		return Formula.and(ret);
 	}
@@ -505,7 +505,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	  Variable w = Variable.unary("w"), r = Variable.unary("r");
 	  
 	  Expression writtenValue = main.v(w);
-    Formula writesObject = prog.instances().some().and(writtenValue.in(prog.instances()));
+    Formula writesObject = writtenValue.in(prog.instances());
     Formula initializedByOtherThread = writtenValue.join(prog.constructs())
       .eq(prog.threadOf(w)).not();
     Formula sameValue = writtenValue.eq(valuesRead(main, r));
@@ -515,8 +515,12 @@ public abstract class JavaMemoryModel implements MemoryModel {
       .and(r.product(w).in(main.mc()))
         .forSome(r.oneOf(reads(prog)));
     
-    return writesObject.and(initializedByOtherThread).implies(existRead)
-      .forAll(w.oneOf(writes(prog)));
+    Formula pre = prog.instances().some();
+    
+    return pre.implies(
+      writesObject.and(initializedByOtherThread).implies(existRead)
+        .forAll(w.oneOf(writes(prog)))
+    );
 	}
 	
 	private Expression reads(Program prog) {

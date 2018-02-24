@@ -112,7 +112,7 @@ public abstract class TransformTests extends ConcurrentTests {
 	
 	@Test
 	public final void testRedundantWriteAfterReadElimination() {
-		testTransformed(miniatur(5), RedundantWriteAfterReadElimination.class, true);
+		testTransformed(miniatur(5, 4), RedundantWriteAfterReadElimination.class, true);
 	}
 	
 	@Test
@@ -132,7 +132,7 @@ public abstract class TransformTests extends ConcurrentTests {
 	
 	@Test
 	public final void testRoachMotelSemanticsTransformed() {
-		testTransformed(miniatur(9), RoachMotelSemantics.class, true);
+		testTransformed(miniatur(9, 4), RoachMotelSemantics.class, true);
 	}
 	
 	@Test

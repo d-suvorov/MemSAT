@@ -15,13 +15,13 @@ package data.transforms;
 
 /**
  * Roach motel semantics: 
- * J.ÊSevc“k and D.ÊAspinall. On validity of program transformations in 
- * the Java memory model. In ECOOP Õ08, volume 5142 of LNCS, pages 27Ð51. Springer Berlin, 2008.
+ * J.ï¿½Sevcï¿½k and D.ï¿½Aspinall. On validity of program transformations in 
+ * the Java memory model. In ECOOP ï¿½08, volume 5142 of LNCS, pages 27ï¿½51. Springer Berlin, 2008.
  * 
  * @author etorlak
  */
 public final class RoachMotelSemantics {
-	static int x = 0, y = 0, z = 0;
+	static int x = 4, y = 4, z = 4;
 	final static Object m = new Object();
 	
 	public static final void thread1() {

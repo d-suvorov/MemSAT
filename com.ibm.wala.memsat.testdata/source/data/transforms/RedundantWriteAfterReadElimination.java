@@ -21,7 +21,7 @@ package data.transforms;
  * @author etorlak
  */
 public final class RedundantWriteAfterReadElimination {
-	static int x = 0;
+	static int x = 4;
 	final static Object m1, m2;
 	
 	static {
