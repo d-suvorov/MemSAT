@@ -278,10 +278,10 @@ public abstract class JavaMemoryModel implements MemoryModel {
 		
 		ret.add( partialOrderOver(main.dc(), main.actions()) );
 		ret.add( partialOrderOver(main.mc(), main.actions()) );
-		ret.add( dc1(prog, main) );
-		ret.add( mc1(prog, main) );
-		ret.add( mc2(prog, main) );
-		ret.add( mc3(prog, main) );
+		// ret.add( dc1(prog, main) );
+		// ret.add( mc1(prog, main) );
+		// ret.add( mc2(prog, main) );
+		// ret.add( mc3(prog, main) );
 		
 		return Formula.and(ret);
 	}
