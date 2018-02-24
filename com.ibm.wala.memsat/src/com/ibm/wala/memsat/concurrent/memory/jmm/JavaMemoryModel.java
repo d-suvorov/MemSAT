@@ -453,7 +453,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	  Formula initializedByOtherThread = main.locationOf(a).join(prog.constructs())
 	    .eq(prog.threadOf(a)).not();
 	  Expression valueRead = main.v(main.w(r));
-	  Formula seesObject = prog.instances().some().and(valueRead.in(prog.instances()));
+	  Formula seesObject = valueRead.in(prog.instances());
 	  Formula sameObject = valueRead.in(main.locationOf(a));
 	  Formula sameThread = prog.threadOf(a).eq(prog.threadOf(r));
 	  
