@@ -124,7 +124,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 		}
 		
 		Graph<InlinedInstruction> dc = dereferenceUpperBound(info);
-		builder.boundReflexiveOrdering(main.dc(), dc);
+		builder.boundReflexiveOrdering(main.dc(), Graphs.transitiveClosure(dc));
 		for (JMMExecution exec : speculations) {
 		  builder.boundOrdering(exec.dc(), SlowSparseNumberedGraph.make());
 		}
@@ -134,7 +134,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 		mcl.add(dc);
 		mcl.add(revert(Programs.visibleWrites(info)));
 		Graph<InlinedInstruction> mc = Graphs.union(mcl);
-		builder.boundReflexiveOrdering(main.mc(), mc);
+		builder.boundReflexiveOrdering(main.mc(), Graphs.transitiveClosure(mc));
     for (JMMExecution exec : speculations) {
       builder.boundOrdering(exec.mc(), SlowSparseNumberedGraph.make());
     }
@@ -278,7 +278,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 		
 		ret.add( partialOrderOver(main.dc(), main.actions()) );
 		ret.add( partialOrderOver(main.mc(), main.actions()) );
-		// ret.add( dc1(prog, main) );
+		ret.add( dc1(prog, main) );
 		ret.add( mc1(prog, main) );
 		ret.add( mc2(prog, main) );
 		ret.add( mc3(prog, main) );
