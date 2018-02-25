@@ -21,7 +21,7 @@ package data.transforms;
  * @author etorlak
  */
 public final class RoachMotelSemantics {
-	static int x = 4, y = 4, z = 4;
+	static int x = 0, y = 0, z = 0;
 	final static Object m = new Object();
 	
 	public static final void thread1() {
