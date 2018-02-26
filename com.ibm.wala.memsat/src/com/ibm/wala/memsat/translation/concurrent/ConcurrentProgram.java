@@ -63,6 +63,7 @@ final class ConcurrentProgram implements Program {
 	private final Relation /* Thread -> Thread */ endsBefore;
 	private final Relation instances;
 	private final Relation constructs;
+	private final Relation defaultInits;
 	
 	/**
 	 * Constructs a new ConcurrentProgram using the provided memory handler and translation that
@@ -85,6 +86,7 @@ final class ConcurrentProgram implements Program {
 		this.endsBefore = Relation.binary("endsBefore");
 		this.instances = Relation.unary("instances");
 		this.constructs = Relation.binary("constructs");
+		this.defaultInits = Relation.unary("defaultInits");
 	}
 
 	/**
@@ -142,6 +144,9 @@ final class ConcurrentProgram implements Program {
 	
 	@Override
 	public Expression constructs() { return constructs; }
+	
+	@Override
+	public Expression defaultInits() { return defaultInits; }
 	
 	/**
 	 * {@inheritDoc}
@@ -247,6 +252,7 @@ final class ConcurrentProgram implements Program {
 		boundEndsBefore(bounds);
 		boundInstances(bounds);
 		boundConstructs(bounds);
+		boundDefaultInits(bounds);
 		
 		return new ConcurrentBoundsBuilder(bounds, factory);
 	}
@@ -299,5 +305,24 @@ final class ConcurrentProgram implements Program {
 	  final TupleFactory tuples = bounds.universe().factory();
 	  TupleSet cBounds = factory.base().constants().constructsBounds(tuples, info);
     bounds.boundExactly(constructs, cBounds);
+	}
+	
+	private final void boundDefaultInits(Bounds bounds) {
+	  final TupleFactory tuples = bounds.universe().factory();
+	  TupleSet res = tuples.noneOf(1);
+	  for (CGNode thread : info.threads()) {
+	    if (!thread.getMethod().isClinit()) {
+	      // Short-cut
+	      continue;
+	    }
+	    Set<InlinedInstruction> actions = info.concurrentInformation(thread).actions();
+	    for (InlinedInstruction inst : actions) {
+	      if (!inst.isInitWrite())
+	        continue;
+	      TupleSet acts = factory.actionAtoms(tuples, inst);
+	      res.addAll(acts);
+	    }
+	  }
+	  bounds.boundExactly(defaultInits, res);
 	}
 }
