@@ -89,6 +89,8 @@ public interface InlinedInstruction {
 	 */
 	public abstract Action action();
 	
+	public abstract boolean isInitWrite();
+	
 	/**
 	 * Enumerates the kind of actions that InlinedInstructions have on shared memory.
 	 * @author etorlak

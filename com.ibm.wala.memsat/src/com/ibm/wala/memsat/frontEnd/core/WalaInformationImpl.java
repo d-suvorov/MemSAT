@@ -478,6 +478,8 @@ public class WalaInformationImpl implements WalaInformation {
 
 				private final Action action;
 				
+				boolean isInitWrite = false;
+				
 				InlinedInstructionImpl(CGNode node, int index, SSACFG.BasicBlock bb, SSAInstruction inst, Stack<CallSite> base) {
 				  this(node, index, bb, inst, base, false);
 				}
@@ -547,6 +549,11 @@ public class WalaInformationImpl implements WalaInformation {
 
 				public Action action() {
 					return action;
+				}
+				
+				@Override
+				public boolean isInitWrite() {
+				  return isInitWrite;
 				}
 
 				public InlinedInstruction related(int index, SSAInstruction inst) {
@@ -752,6 +759,38 @@ public class WalaInformationImpl implements WalaInformation {
 						}, Recurse.Pre);
 			}
 			
+			private CGNode clinitNode() {
+        for (CGNode node : threadRoots) {
+          if (node.getMethod().isClinit())
+            return node;
+        }
+        return null;
+      }
+			
+			private List<InlinedInstructionImpl> defaultInitInstructions() {
+        List<InlinedInstructionImpl> res = new ArrayList<>();
+        for (CGNode node : callGraph) {
+          WalaCGNodeInformation nodeInfo = cgNodeInformation(node);
+          Iterator<? extends IndexedEntry<SSAInstruction>> it;
+           for (it = nodeInfo.relevantInstructions(); it.hasNext();) {
+             InstructionEntry I = (InstructionEntry) it.next();
+             final SSAInstruction inst = I.value();
+            
+             if (inst instanceof SSAGetInstruction) {
+               SSAGetInstruction get = (SSAGetInstruction) inst;
+               if (!get.isStatic()) {
+                 int index = Integer.MIN_VALUE + res.size() + 1;
+                 InlinedInstructionImpl init = new InlinedInstructionImpl(
+                   node, index, null, get, new LinkedStack<CallSite>());
+                 init.isInitWrite = true;
+                 res.add(init);
+               }
+             }
+           }
+        }
+        return res;
+      }
+			
 			// TODO simplify this method
 			private Graph<InlinedInstruction> simpleThreadOrder() {
 				Graph<InlinedInstruction> res = SlowSparseNumberedGraph.make();
@@ -869,6 +908,26 @@ public class WalaInformationImpl implements WalaInformation {
 						}
 					}
 				}
+				
+				if (threadRoot.getMethod().isClinit()) {
+          InlinedInstructionImpl prev = null;
+          List<InlinedInstructionImpl> inits = defaultInitInstructions();
+          if (!inits.isEmpty()) {
+            for (InlinedInstructionImpl ii : inits) {
+              res.addNode(ii);
+              if (prev != null) {
+                res.addEdge(prev, ii);
+              }
+              prev = ii;
+            }
+           
+            for(InlinedInstruction x : res) {
+              if (x != inits.get(0) && res.getPredNodeCount(x) == 0) {
+                res.addEdge(prev, x);
+              }
+            }
+          }
+				}
 			
 				return pruneThreadOrderGraph(res);
 			}
@@ -985,6 +1044,10 @@ public class WalaInformationImpl implements WalaInformation {
 						}
 					}
 				}
+				
+				for (InlinedInstructionImpl init : defaultInitInstructions()) {
+          result.add(init);
+        }
 
 				return result;
 			}

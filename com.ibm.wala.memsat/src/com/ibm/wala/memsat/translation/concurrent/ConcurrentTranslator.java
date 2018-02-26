@@ -141,8 +141,10 @@ public final class ConcurrentTranslator {
 		
 		final FieldSSATable fieldSSA = info.cgNodeInformation(node).fieldSSA();
 		final Set<PointerKey> sequential = Iterator2Set.toSet(fieldSSA.getFields());
-		for(InlinedInstruction inst : info.concurrentInformation(node).actions()) { 
-			if (node.equals(inst.cgNode())) { 
+		for(InlinedInstruction inst : info.concurrentInformation(node).actions()) {
+		  if (inst.isInitWrite())
+        continue;
+			if (node.equals(inst.cgNode())) {
 				final SSAInstruction obj = inst.instruction();
 				if (obj instanceof SSAFieldAccessInstruction) { 
 					for(int use : fieldSSA.getUses(inst.instruction())) { 
