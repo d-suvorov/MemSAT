@@ -774,6 +774,11 @@ public class WalaInformationImpl implements WalaInformation {
 			private List<InlinedInstructionImpl> defaultInitInstructions() {
         List<InlinedInstructionImpl> res = new ArrayList<>();
         for (CGNode node : callGraph) {
+          if (node.getMethod().getSignature().contains("registerNatives")) {
+            // TODO temporary hack
+            System.out.println("Skipping method: " + node);
+            continue;
+          }
           WalaCGNodeInformation nodeInfo = cgNodeInformation(node);
           Iterator<? extends IndexedEntry<SSAInstruction>> it;
            for (it = nodeInfo.relevantInstructions(); it.hasNext();) {
