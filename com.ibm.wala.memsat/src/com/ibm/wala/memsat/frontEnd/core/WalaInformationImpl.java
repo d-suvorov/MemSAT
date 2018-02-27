@@ -34,6 +34,7 @@ import com.ibm.wala.classLoader.CallSiteReference;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.classLoader.JavaLanguage.JavaInstructionFactory;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.CallGraph;
@@ -88,7 +89,10 @@ import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.ssa.SSAMonitorInstruction;
 import com.ibm.wala.ssa.SSANewInstruction;
 import com.ibm.wala.ssa.SSAPhiInstruction;
+import com.ibm.wala.ssa.SSAPutInstruction;
+import com.ibm.wala.ssa.SymbolTable;
 import com.ibm.wala.types.MethodReference;
+import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.util.collections.FilterIterator;
 import com.ibm.wala.util.collections.HashSetFactory;
 import com.ibm.wala.util.collections.Iterator2Collection;
@@ -780,8 +784,9 @@ public class WalaInformationImpl implements WalaInformation {
                SSAGetInstruction get = (SSAGetInstruction) inst;
                if (!get.isStatic()) {
                  int index = Integer.MIN_VALUE + res.size() + 1;
+                 SSAPutInstruction put = getToPut(node, get);
                  InlinedInstructionImpl init = new InlinedInstructionImpl(
-                   node, index, null, get, new LinkedStack<CallSite>());
+                   node, index, null, put, new LinkedStack<CallSite>());
                  init.isInitWrite = true;
                  res.add(init);
                }
@@ -790,6 +795,13 @@ public class WalaInformationImpl implements WalaInformation {
         }
         return res;
       }
+			
+			private SSAPutInstruction getToPut(CGNode node, SSAGetInstruction get) {
+			  SymbolTable table = node.getIR().getSymbolTable();
+			  int zeroValue = table.getConstant(0);
+			  return new JavaInstructionFactory()
+			      .PutInstruction(get.iindex, get.getRef(), zeroValue, get.getDeclaredField());
+			}
 			
 			// TODO simplify this method
 			private Graph<InlinedInstruction> simpleThreadOrder() {
