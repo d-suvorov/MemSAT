@@ -1056,10 +1056,6 @@ public class WalaInformationImpl implements WalaInformation {
 						}
 					}
 				}
-				
-				for (InlinedInstructionImpl init : defaultInitInstructions()) {
-          result.add(init);
-        }
 
 				return result;
 			}
