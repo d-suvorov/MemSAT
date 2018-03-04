@@ -195,14 +195,20 @@ final class ConcurrentStringVisualizer extends StringVisualizer<ConcurrentTransl
 				if (eval.evaluate(exec.action(inst).some())) { 
 					final String methodString = methodNames.get(inst.cgNode());
 					final String instString = instruction(exec, inst);
-					final String lineString = inst.action() != Action.FREEZE
-					  ? line(inst.cgNode().getMethod(), inst.instructionIndex())
-					  : "freeze";
+					final String lineString = lineString(inst);
 					ret.put(inst, methodString + "[" + lineString + "]::" + instString);
 				}
 			}
 		}
 		return ret;
+	}
+	
+	private final String lineString(InlinedInstruction inst) {
+	  if (inst.action() == Action.FREEZE)
+	    return "freeze";
+	  if (inst.isInitWrite())
+	    return "initWrite";
+	  return line(inst.cgNode().getMethod(), inst.instructionIndex());
 	}
 
 	/**
