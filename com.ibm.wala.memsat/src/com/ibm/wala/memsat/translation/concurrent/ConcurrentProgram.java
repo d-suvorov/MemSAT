@@ -41,6 +41,7 @@ import com.ibm.wala.util.graph.traverse.DFS;
 
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
+import kodkod.ast.IntConstant;
 import kodkod.ast.Relation;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleFactory;
@@ -185,6 +186,10 @@ final class ConcurrentProgram implements Program {
 				
 				sv.add( action.lone() );
 				sv.add( guard.iff(action.some()) );
+				
+				if (inst.isInitWrite()) {
+				  sv.add(action.join(exec.v()).eq(IntConstant.constant(0).toBitset()));
+				}
 				
 				final Expression location = handler.locationOf(inst);
 				if (location!=null) { 

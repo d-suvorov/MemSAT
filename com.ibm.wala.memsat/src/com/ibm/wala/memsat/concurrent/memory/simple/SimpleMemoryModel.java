@@ -108,6 +108,7 @@ abstract class SimpleMemoryModel<T> implements MemoryModel {
 		final SimpleExecution<T> exec = execution(prog);
 		final Formula formula = prog.sequentiallyValid(exec).and(consistencyConstraints(prog, exec));
 		final Bounds bounds = bounds(prog, exec);
+		
 		return new Justification() {
 			public Execution execution() { return exec; }
 			public Formula formula() { return formula; }
