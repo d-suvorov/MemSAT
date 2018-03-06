@@ -449,6 +449,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	protected Formula dc1(Program prog, JMMExecution main) {
 	  Variable a = Variable.unary("a"), r = Variable.unary("r");
 	  
+	  Formula notInit = a.in(prog.defaultInits()).not();
 	  Formula fieldAccess = main.locationOf(a).count().eq(IntConstant.constant(2));
 	  Formula initializedByOtherThread = main.locationOf(a).join(prog.constructs())
 	    .eq(prog.threadOf(a)).not();
@@ -462,7 +463,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	    .and(r.product(a).in(main.dc()))
 	      .forSome(r.oneOf(reads(prog)));
 	  
-	  return fieldAccess.and(initializedByOtherThread).implies(existRead)
+	  return notInit.and(fieldAccess).and(initializedByOtherThread).implies(existRead)
 	    .forAll(a.oneOf(prog.allOf(
 	      NORMAL_READ, NORMAL_WRITE, VOLATILE_READ, VOLATILE_WRITE)));
 	}
