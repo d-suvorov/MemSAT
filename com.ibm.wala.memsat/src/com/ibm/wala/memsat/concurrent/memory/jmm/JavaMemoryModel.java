@@ -446,6 +446,11 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	 */
 	protected abstract Formula rule9(Program prog, JMMExecution main, List<JMMExecution> speculations, List<? extends Expression>  commits);
 	
+	private Formula isObject(Program prog, Expression value) {
+	  return value.in(Expression.INTS).not().and(
+	    value.eq(prog.nil()).not());
+	}
+	
 	protected Formula dc1(Program prog, JMMExecution main) {
 	  Variable a = Variable.unary("a"), r = Variable.unary("r");
 	  
@@ -454,7 +459,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	  Formula initializedByOtherThread = main.locationOf(a).join(prog.constructs())
 	    .eq(prog.threadOf(a)).not();
 	  Expression valueRead = main.v(main.w(r));
-	  Formula seesObject = valueRead.in(Expression.INTS).not();
+	  Formula seesObject = isObject(prog, valueRead);
 	  Formula sameObject = valueRead.in(main.locationOf(a));
 	  Formula sameThread = prog.threadOf(a).eq(prog.threadOf(r));
 	  
@@ -506,7 +511,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	  Variable w = Variable.unary("w"), r = Variable.unary("r");
 	  
 	  Expression writtenValue = main.v(w);
-    Formula writesObject = writtenValue.in(Expression.INTS).not();
+    Formula writesObject = isObject(prog, writtenValue);
     Formula initializedByOtherThread = writtenValue.join(prog.constructs())
       .eq(prog.threadOf(w)).not();
     Formula sameValue = writtenValue.eq(valuesRead(main, r));

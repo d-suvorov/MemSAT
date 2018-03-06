@@ -330,4 +330,9 @@ final class ConcurrentProgram implements Program {
 	  }
 	  bounds.boundExactly(defaultInits, res);
 	}
+	
+	@Override
+	public Expression nil() {
+	  return factory.base().constants().nil();
+	}
 }

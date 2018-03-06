@@ -99,6 +99,8 @@ public interface Program {
 	
 	public abstract Expression defaultInits();
 	
+	public abstract Expression nil();
+	
 	/**
 	 * Returns a Formula that evaluates to true iff the given execution is sequentially valid with respect
 	 * to this program.  A non-speculative execution is valid iff its po, v, and w respect the sequential 
