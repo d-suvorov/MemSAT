@@ -6,11 +6,12 @@ import java.util.Set;
 
 import com.ibm.wala.memsat.concurrent.MemoryModel;
 import com.ibm.wala.memsat.concurrent.memory.jmm.JMMAlt;
+import com.ibm.wala.memsat.concurrent.memory.jmm.JMMOriginal;
 import com.ibm.wala.types.MethodReference;
 
 public class JMMFinalsTests extends FinalsTests {
 	public JMMFinalsTests() {
-		super(new HashSet<String>(Arrays.asList()));
+		super(new HashSet<String>(Arrays.asList("02")));
 	}
 
 	@Override
