@@ -103,7 +103,7 @@ public interface Program {
 	
 	public abstract Expression finalFields();
 	
-	public abstract Relation getReferencedField(InlinedInstruction inst);
+	public abstract Expression getReferencedField(InlinedInstruction inst);
 	
 	/**
 	 * Returns a Formula that evaluates to true iff the given execution is sequentially valid with respect

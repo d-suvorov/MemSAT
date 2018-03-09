@@ -118,11 +118,6 @@ final class ConcurrentFactory {
 		}
 	}
 	
-	public Relation getReferencedField(InlinedInstruction inst) {
-	  IField field = instFields.get(inst);
-	  return fieldExprs.get(field);
-	}
-	
 	public Map<IField, Relation> getFieldExprs() {
 	  return Collections.unmodifiableMap(fieldExprs);
 	}
@@ -171,7 +166,7 @@ final class ConcurrentFactory {
 				final Effects instEffects = effects.get(inst);
 				final Set<ActionAtom> upper = new LinkedHashSet<ActionAtom>(4);
 				//if (atoms.containsKey(inst)) { upper.add(atoms.get(inst)); }
-				for(InlinedInstruction rep : atoms.keySet()) { 
+				for(InlinedInstruction rep : atoms.keySet()) {
 					if (instEffects.overlaps(effects.get(rep)))
 						upper.add(atoms.get(rep));
 				}
@@ -535,12 +530,12 @@ final class ConcurrentFactory {
 					instances = referencedInstance(info, inst);
 				} else {
 					assert inst.instruction() instanceof SSAArrayReferenceInstruction;
-					location = thread;
+					location = inst.cgNode();
 					instances = referencedArray(info, inst);
 				}
 				break;
 			case FREEZE:
-			  location = null;
+			  location = inst.cgNode();
 			  instances = Collections.emptySet();
 			  break;
 			default : throw new AssertionError("unreachable");
@@ -552,13 +547,11 @@ final class ConcurrentFactory {
 		 * @return true if the effects of this.instruction may overlap with the effects of other.instruction.
 		 */
 		boolean overlaps(Effects other) { 
-
 			if (this==other) 
 				return true;
-			else 
-				return action.equals(other.action) && thread.equals(other.thread) && 
-				       Objects.equals(location, equals(other.location)) && 
-				       ((instances.isEmpty() && other.instances.isEmpty()) || intersects(instances, other.instances));
+			return action.equals(other.action) && thread.equals(other.thread) && 
+			      Objects.equals(location, equals(other.location)) && 
+			      ((instances.isEmpty() && other.instances.isEmpty()) || intersects(instances, other.instances));
 		}
 
 		/**

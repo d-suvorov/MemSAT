@@ -290,7 +290,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 		ret.add( mc1(prog, main) );
 		ret.add( mc2(prog, main) );
 		ret.add( mc3(prog, main) );
-		ret.add( finalSemantics(prog, main) );
+		// ret.add( finalSemantics(prog, main) );
 		
 		return Formula.and(ret);
 	}
@@ -557,8 +557,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	  Variable r1 = Variable.unary("r1");
 	  Variable r2 = Variable.unary("r2");
 	  
-	  Formula aIsAReadOfFinal = a.in(reads(prog)).and(
-	      main.locationOf(a).in(prog.finalFields()));
+	  Formula aIsAReadOfFinal = main.locationOf(a).in(prog.finalFields());
 	  Formula r1LocationFrozenByF = main.locationOf(r1).join(main.freezes()).eq(f);
 	  
 	  Formula chain = w.product(f).in(main.hb())
@@ -567,7 +566,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	    .and(r1.product(r2).in(main.dc()));
 	  Formula fhbRule = chain.iff(w.product(r2).in(main.fhb()));
 	  
-	  return aIsAReadOfFinal.not().and(r1LocationFrozenByF)
+	  /*Formula res = aIsAReadOfFinal.not().and(r1LocationFrozenByF)
 	    .implies(fhbRule)
 	      .forAll(
 	        w.oneOf(writes(prog)).and(
@@ -579,7 +578,12 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	            )
 	          )
 	        )
-	      );
+	      );*/
+	  
+	  Formula res = r1LocationFrozenByF.implies(f.product(r1).in(main.fhb())).
+	      forAll(r1.oneOf(reads(prog)).and(f.oneOf(prog.allOf(Action.FREEZE))));
+	  
+	  return res;
 	}
 	
 	/**

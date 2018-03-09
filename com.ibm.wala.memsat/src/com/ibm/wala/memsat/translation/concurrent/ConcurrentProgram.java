@@ -138,8 +138,8 @@ final class ConcurrentProgram implements Program {
 	}
 	
 	@Override
-	public Relation getReferencedField(InlinedInstruction inst) {
-	  return factory.getReferencedField(inst);
+	public Expression getReferencedField(InlinedInstruction inst) {
+	  return factory.fieldOf(inst);
 	}
 	
 	/**
