@@ -123,12 +123,14 @@ public abstract class JavaMemoryModel implements MemoryModel {
 			builder.boundActions(commits.get(i), all);
 		}
 		
+		// Bound dereference chain
 		Graph<InlinedInstruction> dc = dereferenceUpperBound(info);
 		builder.boundReflexiveOrdering(main.dc(), Graphs.transitiveClosure(dc));
 		for (JMMExecution exec : speculations) {
 		  builder.boundOrdering(exec.dc(), SlowSparseNumberedGraph.make());
 		}
 		
+		// Bound memory chain
 		List<Graph<InlinedInstruction>> mcl = new ArrayList<>();
 		mcl.add(memoryChainUpperBound(info));
 		mcl.add(dc);
@@ -137,6 +139,12 @@ public abstract class JavaMemoryModel implements MemoryModel {
 		builder.boundReflexiveOrdering(main.mc(), Graphs.transitiveClosure(mc));
     for (JMMExecution exec : speculations) {
       builder.boundOrdering(exec.mc(), SlowSparseNumberedGraph.make());
+    }
+    
+    // Bound fhb
+    builder.boundOrdering(main.fhb(), revert(Programs.visibleWrites(info)));
+    for (JMMExecution exec : speculations) {
+      builder.boundOrdering(exec.fhb(), SlowSparseNumberedGraph.make());
     }
 		
 		return builder.build();
@@ -282,6 +290,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 		ret.add( mc1(prog, main) );
 		ret.add( mc2(prog, main) );
 		ret.add( mc3(prog, main) );
+		// ret.add( finalSemantics(prog, main) );
 		
 		return Formula.and(ret);
 	}
@@ -540,6 +549,10 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	private Expression valuesRead(AbstractExecution exec, Expression r) {
     return exec.v(exec.w(r));
   }
+	
+	protected Formula finalSemantics(Program prog, JMMExecution main) {
+	  return Formula.FALSE;
+	}
 	
 	/**
 	 * {@inheritDoc}

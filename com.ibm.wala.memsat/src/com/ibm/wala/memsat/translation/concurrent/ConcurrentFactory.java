@@ -118,6 +118,10 @@ final class ConcurrentFactory {
 		}
 	}
 	
+	public Map<IField, Relation> getFieldExprs() {
+	  return Collections.unmodifiableMap(fieldExprs);
+	}
+	
 	/** Initializes the mapping from instructions to sets of atoms for a non-speculative memory model. */
 	private void initNonSpeculativeAtoms() {
 		for(Map.Entry<InlinedInstruction,String> named : instructionNames(instructions(base.info())).entrySet()) { 

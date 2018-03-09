@@ -24,6 +24,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.classLoader.NewSiteReference;
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
@@ -65,6 +66,7 @@ final class ConcurrentProgram implements Program {
 	private final Relation instances;
 	private final Relation constructs;
 	private final Relation defaultInits;
+	private final Relation finalFields;
 	
 	/**
 	 * Constructs a new ConcurrentProgram using the provided memory handler and translation that
@@ -88,6 +90,7 @@ final class ConcurrentProgram implements Program {
 		this.instances = Relation.unary("instances");
 		this.constructs = Relation.binary("constructs");
 		this.defaultInits = Relation.unary("defaultInits");
+		this.finalFields = Relation.unary("finalFields");
 	}
 
 	/**
@@ -148,6 +151,9 @@ final class ConcurrentProgram implements Program {
 	
 	@Override
 	public Expression defaultInits() { return defaultInits; }
+	
+	@Override
+  public Expression finalFields() { return finalFields; }
 	
 	/**
 	 * {@inheritDoc}
@@ -258,6 +264,7 @@ final class ConcurrentProgram implements Program {
 		boundInstances(bounds);
 		boundConstructs(bounds);
 		boundDefaultInits(bounds);
+		boundFinalFields(bounds);
 		
 		return new ConcurrentBoundsBuilder(bounds, factory);
 	}
@@ -329,6 +336,17 @@ final class ConcurrentProgram implements Program {
 	    }
 	  }
 	  bounds.boundExactly(defaultInits, res);
+	}
+	
+	private final void boundFinalFields(Bounds bounds) {
+	  final TupleFactory tuples = bounds.universe().factory();
+    TupleSet res = tuples.noneOf(1);
+	  for (Map.Entry<IField, Relation> e : factory.getFieldExprs().entrySet()) {
+	    if (e.getKey().isFinal()) {
+	      res.add(tuples.tuple(e.getValue()));
+	    }
+	  }
+	  bounds.boundExactly(finalFields, res);
 	}
 	
 	@Override

@@ -2,7 +2,7 @@ package data.finals;
 
 public class Test02 {
 	public static class A {
-		int f;
+		final int f;
 		
 		A() {
 			f = 1;

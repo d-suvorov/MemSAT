@@ -71,6 +71,8 @@ public final class JMMExecution extends AbstractExecution {
 	private final Expression freezes;
 	private final Relation dc, mc;
 	
+	private final Relation fhb;
+	
 	/**
 	 * Creates a new JMMExecution for the given program, using the given speculation
 	 * flag and the given suffix in the names of all relations it allocates.
@@ -86,11 +88,9 @@ public final class JMMExecution extends AbstractExecution {
 		
 		this.dc = Relation.binary("dc" + suffix);
 		this.mc = Relation.binary("mc" + suffix);
+		this.fhb = Relation.binary("fhb" + suffix);
 		
-		// TODO @finals should it come after well-formed?
 		this.freezes = computeFreezes(prog);
-		//System.out.println("fz:");
-		//System.out.println(freezes);
 		
 		this.wellFormed = computeWellFormed(prog);
 	}
@@ -316,6 +316,8 @@ public final class JMMExecution extends AbstractExecution {
 	public Relation dc() { return dc; }
 	
 	public Relation mc() { return mc; }
+	
+	public Relation fhb() { return fhb; }
 
 	/**
 	 * Returns a formula that evaluates to true iff this execution is well-formed
@@ -335,6 +337,7 @@ public final class JMMExecution extends AbstractExecution {
 	  res.put(Nodes.transitiveReduction(so).difference(Expression.IDEN), "synchronizationOrder");
 	  res.put(mc.difference(Expression.IDEN), "memoryChain");
 	  res.put(dc.difference(Expression.IDEN), "dereferenceChain");
+	  res.put(fhb.difference(Expression.IDEN), "fhb");
 	  return res;
 	}
 
