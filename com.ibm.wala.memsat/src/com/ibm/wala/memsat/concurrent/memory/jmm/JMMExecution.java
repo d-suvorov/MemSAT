@@ -150,8 +150,9 @@ public final class JMMExecution extends AbstractExecution {
 	      if (inst.instruction() instanceof SSAFieldAccessInstruction) {
           final SSAFieldAccessInstruction access = (SSAFieldAccessInstruction) inst.instruction();
           if (access instanceof SSAPutInstruction) {
+            Relation field = p.getReferencedField(inst);
             InlinedInstruction freeze = freezesByInit.get(node);
-            Expression edge = action(inst).product(action(freeze));
+            Expression edge = field.product(action(freeze));
             fz.add(edge);
           }
         }
@@ -318,6 +319,8 @@ public final class JMMExecution extends AbstractExecution {
 	public Relation mc() { return mc; }
 	
 	public Relation fhb() { return fhb; }
+	
+	public Expression freezes() { return freezes; }
 
 	/**
 	 * Returns a formula that evaluates to true iff this execution is well-formed
@@ -327,7 +330,7 @@ public final class JMMExecution extends AbstractExecution {
 	 */
 	public Formula wellFormed() { return wellFormed; }
 
-	/**
+	/**referencedFields
 	 * {@inheritDoc}
 	 * @see com.ibm.wala.memsat.concurrent.Execution#viz()
 	 */
@@ -338,6 +341,7 @@ public final class JMMExecution extends AbstractExecution {
 	  res.put(mc.difference(Expression.IDEN), "memoryChain");
 	  res.put(dc.difference(Expression.IDEN), "dereferenceChain");
 	  res.put(fhb.difference(Expression.IDEN), "fhb");
+	  res.put(freezes, "freezes");
 	  return res;
 	}
 

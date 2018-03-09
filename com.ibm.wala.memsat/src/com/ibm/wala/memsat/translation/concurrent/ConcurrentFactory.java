@@ -118,6 +118,11 @@ final class ConcurrentFactory {
 		}
 	}
 	
+	public Relation getReferencedField(InlinedInstruction inst) {
+	  IField field = instFields.get(inst);
+	  return fieldExprs.get(field);
+	}
+	
 	public Map<IField, Relation> getFieldExprs() {
 	  return Collections.unmodifiableMap(fieldExprs);
 	}

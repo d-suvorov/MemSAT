@@ -103,6 +103,8 @@ public interface Program {
 	
 	public abstract Expression finalFields();
 	
+	public abstract Relation getReferencedField(InlinedInstruction inst);
+	
 	/**
 	 * Returns a Formula that evaluates to true iff the given execution is sequentially valid with respect
 	 * to this program.  A non-speculative execution is valid iff its po, v, and w respect the sequential 

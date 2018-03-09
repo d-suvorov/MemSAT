@@ -551,6 +551,22 @@ public abstract class JavaMemoryModel implements MemoryModel {
   }
 	
 	protected Formula finalSemantics(Program prog, JMMExecution main) {
+	  Variable w = Variable.unary("w");
+	  Variable a = Variable.unary("a");
+	  Variable f = Variable.unary("f");
+	  Variable r1 = Variable.unary("r1");
+	  Variable r2 = Variable.unary("r2");
+	  
+	  Formula aIsAReadOfFinal = a.in(reads(prog)).and(
+	      main.locationOf(a).in(prog.finalFields()));
+	  
+	  Formula chain = w.product(f).in(main.hb())
+	    .and(f.product(a).in(main.hb()))
+	    .and(a.product(r1).in(main.mc()))
+	    .and(r1.product(r2).in(main.dc()));
+	  
+	  Formula fhbRule = chain.iff(w.product(r2).in(main.fhb()));
+	  
 	  return Formula.FALSE;
 	}
 	

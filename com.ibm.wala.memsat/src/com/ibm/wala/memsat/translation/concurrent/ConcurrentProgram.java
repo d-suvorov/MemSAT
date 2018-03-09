@@ -137,6 +137,11 @@ final class ConcurrentProgram implements Program {
 		}
 	}
 	
+	@Override
+	public Relation getReferencedField(InlinedInstruction inst) {
+	  return factory.getReferencedField(inst);
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 * @see com.ibm.wala.memsat.concurrent.Program#endsBefore()
