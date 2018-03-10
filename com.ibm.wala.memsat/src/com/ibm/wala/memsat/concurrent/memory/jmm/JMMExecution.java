@@ -152,7 +152,6 @@ public final class JMMExecution extends AbstractExecution {
           if (access instanceof SSAPutInstruction) {
             Expression field = p.getReferencedField(inst);
             InlinedInstruction freeze = freezesByInit.get(node);
-            
             Expression edge = field.product(action(freeze));
             fz.add(edge);
           }
@@ -342,6 +341,10 @@ public final class JMMExecution extends AbstractExecution {
 	  res.put(mc.difference(Expression.IDEN), "memoryChain");
 	  res.put(dc.difference(Expression.IDEN), "dereferenceChain");
 	  res.put(fhb.difference(Expression.IDEN), "fhb");
+	  if (!freezes.equals(Expression.NONE)) {
+	    // TODO deal with arity
+	    res.put(freezes, "freezes");
+	  }
 	  return res;
 	}
 

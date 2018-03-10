@@ -150,6 +150,36 @@ public abstract class JavaMemoryModel implements MemoryModel {
 		return builder.build();
 	}
 	
+	private Graph<InlinedInstruction> fullUpperBound(WalaInformation info) {
+	  Graph<InlinedInstruction> res = SlowSparseNumberedGraph.make();
+    Set<InlinedInstruction> all = Programs.instructions(info);
+    for (InlinedInstruction i1 : all) {
+      for (InlinedInstruction i2 : all) {
+        res.addNode(i1);
+        res.addNode(i2);
+        res.addEdge(i1, i2);
+      }
+    }
+    return res;
+	}
+	
+	private Graph<InlinedInstruction> fhbUpperBound(WalaInformation info) {
+	  Graph<InlinedInstruction> res = SlowSparseNumberedGraph.make();
+	  Set<InlinedInstruction> all = Programs.instructions(info);
+	  for (InlinedInstruction i1 : all) {
+	    if (i1.action() != Action.FREEZE)
+	      continue;
+	    for (InlinedInstruction i2 : all) {
+	      if (i2.action() == NORMAL_READ || i2.action() == VOLATILE_READ) {
+	        res.addNode(i1);
+	        res.addNode(i2);
+	        res.addEdge(i1, i2);
+	      }
+	    }
+	  }
+	  return res;
+	}
+	
 	// TODO Move somewhere
 	private <T> Graph<T> revert(Graph<T> g) {
 	  Graph<T> res = SlowSparseNumberedGraph.make();
@@ -290,7 +320,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 		ret.add( mc1(prog, main) );
 		ret.add( mc2(prog, main) );
 		ret.add( mc3(prog, main) );
-		// ret.add( finalSemantics(prog, main) );
+		ret.add( finalSemantics(prog, main) );
 		
 		return Formula.and(ret);
 	}
@@ -553,35 +583,37 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	protected Formula finalSemantics(Program prog, JMMExecution main) {
 	  Variable w = Variable.unary("w");
 	  Variable a = Variable.unary("a");
-	  Variable f = Variable.unary("f");
+	  Variable fr = Variable.unary("fr");
 	  Variable r1 = Variable.unary("r1");
 	  Variable r2 = Variable.unary("r2");
 	  
 	  Formula aIsAReadOfFinal = main.locationOf(a).in(prog.finalFields());
-	  Formula r1LocationFrozenByF = main.locationOf(r1).join(main.freezes()).eq(f);
+	  Formula r1LocationFrozenByF = main.locationOf(r1).join(main.freezes()).eq(fr);
+	  Formula sameLocation = main.locationOf(w).eq(main.locationOf(r2));
 	  
-	  Formula chain = w.product(f).in(main.hb())
-	    .and(f.product(a).in(main.hb()))
+	  Formula chain = w.product(fr).in(main.hb())
+	    .and(fr.product(a).in(main.hb()))
 	    .and(a.product(r1).in(main.mc()))
 	    .and(r1.product(r2).in(main.dc()));
-	  Formula fhbRule = chain.iff(w.product(r2).in(main.fhb()));
+	  Formula fhbRule = chain.implies(w.product(r2).in(main.fhb()));
 	  
-	  /*Formula res = aIsAReadOfFinal.not().and(r1LocationFrozenByF)
+	  Expression aDomain = prog.allOf(
+	    NORMAL_READ, VOLATILE_READ, NORMAL_WRITE, VOLATILE_WRITE, LOCK, UNLOCK
+	  );
+	  
+	  Formula res = aIsAReadOfFinal.not().and(r1LocationFrozenByF).and(sameLocation)
 	    .implies(fhbRule)
 	      .forAll(
 	        w.oneOf(writes(prog)).and(
-	          a.oneOf(prog.allOf(Action.values())).and(
-	            f.oneOf(prog.allOf(Action.FREEZE))).and(
+	          a.oneOf(aDomain).and(
+	            fr.oneOf(prog.allOf(Action.FREEZE))).and(
 	              r1.oneOf(reads(prog)).and(
 	                r2.oneOf(reads(prog)
 	              )
 	            )
 	          )
 	        )
-	      );*/
-	  
-	  Formula res = r1LocationFrozenByF.implies(f.product(r1).in(main.fhb())).
-	      forAll(r1.oneOf(reads(prog)).and(f.oneOf(prog.allOf(Action.FREEZE))));
+	      );
 	  
 	  return res;
 	}
