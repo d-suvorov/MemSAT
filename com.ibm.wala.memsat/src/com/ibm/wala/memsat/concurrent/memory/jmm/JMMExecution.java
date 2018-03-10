@@ -158,7 +158,9 @@ public final class JMMExecution extends AbstractExecution {
         }
 	    }
 	  }
-	  return fz.isEmpty() ? Expression.NONE : Expression.union(fz);
+	  // TODO Wow such a hack
+	  Expression empty = po.difference(po);
+	  return fz.isEmpty() ? empty : Expression.union(fz);
 	}
 
 	
@@ -341,10 +343,6 @@ public final class JMMExecution extends AbstractExecution {
 	  res.put(mc.difference(Expression.IDEN), "memoryChain");
 	  res.put(dc.difference(Expression.IDEN), "dereferenceChain");
 	  res.put(fhb.difference(Expression.IDEN), "fhb");
-	  if (!freezes.equals(Expression.NONE)) {
-	    // TODO deal with arity
-	    res.put(freezes, "freezes");
-	  }
 	  return res;
 	}
 
