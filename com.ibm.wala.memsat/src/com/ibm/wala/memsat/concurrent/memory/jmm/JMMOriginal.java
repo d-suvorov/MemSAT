@@ -70,10 +70,10 @@ public final class JMMOriginal extends JavaMemoryModel {
   @Override
   protected Formula rule2(Program prog, JMMExecution main, List<JMMExecution> speculations, List<? extends Expression> commits) {
     final Collection<Formula> ret = new ArrayList<Formula>(maxSpeculations);
-    final Expression hb = main.hb();
+    final Expression hb = main.bhb();
     for (int i = 1; i < maxSpeculations; i++) {
       final Expression C_i = commits.get(i);
-      final Expression hb_i = speculations.get(i).hb();
+      final Expression hb_i = speculations.get(i).bhb();
       ret.add(restrict(hb_i, C_i).eq(restrict(hb, C_i)));
     }
     return Formula.and(ret);
@@ -148,7 +148,7 @@ public final class JMMOriginal extends JavaMemoryModel {
     for (int i = 1; i < maxSpeculations; i++) {
       final JMMExecution E_i = speculations.get(i);
       final Expression ssw_i = ssw(E_i);
-      final Expression hb_i = E_i.hb();
+      final Expression hb_i = E_i.bhb();
 
       final Expression C_i = commits.get(i), C_j = commits.get(i - 1);
 
@@ -181,7 +181,7 @@ public final class JMMOriginal extends JavaMemoryModel {
     final Collection<Formula> ret = new ArrayList<Formula>(maxSpeculations);
     final Expression externals = prog.allOf(SPECIAL);
     for (int i = 1; i < maxSpeculations; i++) {
-      final Expression hb_i = speculations.get(i).hb();
+      final Expression hb_i = speculations.get(i).bhb();
       final Expression C_i = commits.get(i);
       final Variable y = Variable.unary("y" + i);
       ret.add(hb_i.join(y).intersection(externals).in(C_i).forAll(y.oneOf(C_i)));

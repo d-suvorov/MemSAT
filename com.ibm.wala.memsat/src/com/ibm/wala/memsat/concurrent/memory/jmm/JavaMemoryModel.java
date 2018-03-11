@@ -447,7 +447,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 			final JMMExecution E_i = speculations.get(i);
 			final Expression C_j = commits.get(i-1);
 			final Expression A_i = E_i.actions();
-			final Expression hb_i = E_i.hb();
+			final Expression hb_i = E_i.bhb();
 			final Expression relevantReads = A_i.difference(C_j).intersection(reads);
 			final Variable r = Variable.unary("r"+i);
 			ret.add( E_i.w(r).product(r).in(hb_i).forAll(r.oneOf(relevantReads)) );
@@ -591,8 +591,8 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	  Formula r1LocationFrozenByF = main.locationOf(r1).join(main.freezes()).eq(fr);
 	  Formula sameLocation = main.locationOf(w).eq(main.locationOf(r2));
 	  
-	  Formula chain = w.product(fr).in(main.hb())
-	    .and(fr.product(a).in(main.hb()))
+	  Formula chain = w.product(fr).in(main.bhb())
+	    .and(fr.product(a).in(main.bhb()))
 	    .and(a.product(r1).in(main.mc()))
 	    .and(r1.product(r2).in(main.dc()));
 	  Formula fhbRule = chain.implies(w.product(r2).in(main.fhb()));

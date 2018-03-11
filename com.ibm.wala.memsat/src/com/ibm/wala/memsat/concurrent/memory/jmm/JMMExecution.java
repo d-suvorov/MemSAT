@@ -71,6 +71,7 @@ public final class JMMExecution extends AbstractExecution {
 	private final Expression freezes;
 	private final Relation dc, mc;
 	
+	private final Expression bhb;
 	private final Relation fhb;
 	
 	/**
@@ -83,12 +84,14 @@ public final class JMMExecution extends AbstractExecution {
 		this.po = computePO(prog);//Relation.binary("po"+suffix);
 		this.so = Relation.binary("so"+suffix);
 		
-		this.sw = computeSW(prog);	
-		this.hb = po.union(sw).closure();
+		this.sw = computeSW(prog);
 		
 		this.dc = Relation.binary("dc" + suffix);
 		this.mc = Relation.binary("mc" + suffix);
 		this.fhb = Relation.binary("fhb" + suffix);
+		
+		this.bhb = po.union(sw).closure();
+		this.hb = bhb.union(fhb);
 		
 		this.freezes = computeFreezes(prog);
 		
@@ -321,6 +324,8 @@ public final class JMMExecution extends AbstractExecution {
 	public Relation mc() { return mc; }
 	
 	public Relation fhb() { return fhb; }
+	
+	public Expression bhb() { return bhb; }
 	
 	public Expression freezes() { return freezes; }
 

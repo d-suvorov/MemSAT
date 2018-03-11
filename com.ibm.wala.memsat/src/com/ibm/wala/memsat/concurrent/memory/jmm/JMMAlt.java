@@ -60,12 +60,12 @@ public final class JMMAlt extends JavaMemoryModel {
 	protected Formula rule2(Program prog, JMMExecution main, List<JMMExecution> speculations, List<? extends Expression> commits) {
 		final Collection<Formula> ret = new ArrayList<Formula>(maxSpeculations);
 		final Expression reads = prog.allOf(NORMAL_READ,VOLATILE_READ);
-		final Expression hb = main.hb();
+		final Expression hb = main.bhb();
 		for(int i = 1; i < maxSpeculations; i++) {
 			final Variable r = Variable.unary("r"+i);
 			final Expression w = main.w(r);
 			final Expression C_i = commits.get(i);
-			final Expression hb_i = speculations.get(i).hb();
+			final Expression hb_i = speculations.get(i).bhb();
 			final Expression W2r = w.product(r);
 			final Formula f1 = W2r.in(hb).iff(W2r.in(hb_i));
 			final Formula f2 = r.product(w).in(hb_i).not();
@@ -119,7 +119,7 @@ public final class JMMAlt extends JavaMemoryModel {
 	protected Formula rule9(Program prog, JMMExecution main, List<JMMExecution> speculations, List<? extends Expression> commits) {
 		final Collection<Formula> ret = new ArrayList<Formula>(maxSpeculations);
 		final Expression externals = prog.allOf(SPECIAL);
-		final Expression hb = main.hb();
+		final Expression hb = main.bhb();
 		for(int i = 1; i < maxSpeculations; i++) { 
 			final Expression C_i = commits.get(i);
 			final Variable y = Variable.unary("y"+i);
