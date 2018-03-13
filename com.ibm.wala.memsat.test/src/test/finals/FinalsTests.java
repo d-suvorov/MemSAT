@@ -12,6 +12,8 @@ import com.ibm.wala.memsat.Miniatur;
 
 import data.finals.Test01;
 import data.finals.Test02;
+import data.finals.Test03;
+import data.finals.Test04;
 import test.ConcurrentTests;
 
 public abstract class FinalsTests extends ConcurrentTests {
@@ -35,5 +37,15 @@ public abstract class FinalsTests extends ConcurrentTests {
 	@Test
 	public final void test02() {
 		test(miniatur(4), Test02.class, sat("02"));
+	}
+	
+	@Test
+	public final void test03() {
+		test(miniatur(4), Test03.class, sat("03"));
+	}
+	
+	@Test
+	public final void test04() {
+		test(miniatur(4), Test04.class, sat("04"));
 	}
 }
