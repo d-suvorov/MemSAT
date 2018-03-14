@@ -17,6 +17,7 @@ public class Test02 {
 	
 	public static final void p2() {
 		A ta = a;
+		assert ta != null;
 		if (ta != null) {
 			assert ta.f == 1;
 		}

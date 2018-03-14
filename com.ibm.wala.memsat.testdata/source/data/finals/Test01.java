@@ -17,6 +17,7 @@ public final class Test01 {
 	
 	public static final void p2() {
 		A ta = a;
+		assert ta != null;
 		if (ta != null) {
 			// Prohibited by the finals semantics
 			assert ta.f == 0;

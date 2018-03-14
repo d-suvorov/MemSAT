@@ -19,6 +19,7 @@ public class Test03 {
 
 	public static final void p2() {
 		A tp = p;
+		assert tp != null;
 		if (tp != null) {
 			assert tp.f == 0;
 		}
