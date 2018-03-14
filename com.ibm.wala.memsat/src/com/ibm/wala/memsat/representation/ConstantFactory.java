@@ -215,8 +215,10 @@ public final class ConstantFactory {
 	
   public TupleSet instanceAtoms(TupleFactory factory) {
 	  final TupleSet s = factory.noneOf(1);
-    for(Relation[] instances : instances.values()) {
-      for (Relation instance : instances) {
+    for (Map.Entry<InstanceKey, Relation[]> e : instances.entrySet()) {
+      if (e.getKey().getConcreteType().isArrayClass())
+        continue;
+      for (Relation instance : e.getValue()) {
         s.add(factory.tuple(instance));
       }
     }

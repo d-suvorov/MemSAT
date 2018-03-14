@@ -30,6 +30,7 @@ import static com.ibm.wala.memsat.util.Programs.instructions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -490,10 +491,24 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	    value.eq(prog.nil()).not());
 	}
 	
+	private Expression clinitThread(Program prog) {
+	  for (CGNode root : prog.info().threads()) {
+	    // TODO name
+	    if (root.getMethod().getSignature().contains("clinit")) {
+	      Set<CGNode> threads = new HashSet<>();
+	      threads.add(root);
+	      return prog.threads(threads);
+	    }
+	  }
+	  throw new AssertionError();
+	}
+	
 	protected Formula dc1(Program prog, JMMExecution main) {
 	  Variable a = Variable.unary("a"), r = Variable.unary("r");
 	  
-	  Formula notInit = a.in(prog.defaultInits()).not();
+	  Formula notInit = prog.threadOf(a).eq(clinitThread(prog)).not();
+	  // Formula notInit = a.in(prog.defaultInits()).not();
+	  Formula objectAccess = main.locationOf(a).intersection(prog.instances()).some();
 	  Formula fieldAccess = main.locationOf(a).count().eq(IntConstant.constant(2));
 	  Formula initializedByOtherThread = main.locationOf(a).join(prog.constructs())
 	    .eq(prog.threadOf(a)).not();
@@ -507,7 +522,7 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	    .and(r.product(a).in(main.dc()))
 	      .forSome(r.oneOf(reads(prog)));
 	  
-	  return notInit.and(fieldAccess).and(initializedByOtherThread).implies(existRead)
+	  return notInit.and(objectAccess).and(fieldAccess).and(initializedByOtherThread).implies(existRead)
 	    .forAll(a.oneOf(prog.allOf(
 	      NORMAL_READ, NORMAL_WRITE, VOLATILE_READ, VOLATILE_WRITE)));
 	}
