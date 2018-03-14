@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Function;
@@ -75,6 +76,7 @@ import com.ibm.wala.memsat.frontEnd.slicer.PartialSlice;
 import com.ibm.wala.memsat.frontEnd.slicer.PartialSlice.InstructionEntry;
 import com.ibm.wala.memsat.frontEnd.types.MiniaturTypeData;
 import com.ibm.wala.memsat.frontEnd.types.MiniaturTypeDataFactory;
+import com.ibm.wala.memsat.util.Programs;
 import com.ibm.wala.ssa.DefUse;
 import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.ISSABasicBlock;
@@ -91,6 +93,7 @@ import com.ibm.wala.ssa.SSANewInstruction;
 import com.ibm.wala.ssa.SSAPhiInstruction;
 import com.ibm.wala.ssa.SSAPutInstruction;
 import com.ibm.wala.ssa.SymbolTable;
+import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.util.collections.FilterIterator;
@@ -771,6 +774,7 @@ public class WalaInformationImpl implements WalaInformation {
         return null;
       }
 			
+			// TODO refactor
 			private List<InlinedInstructionImpl> defaultInitInstructions() {
         List<InlinedInstructionImpl> res = new ArrayList<>();
         for (CGNode node : callGraph) {
@@ -779,8 +783,11 @@ public class WalaInformationImpl implements WalaInformation {
             System.out.println("Skipping method: " + node);
             continue;
           }
+          
+          Set<SSAGetInstruction> created = new HashSet<>();
           WalaCGNodeInformation nodeInfo = cgNodeInformation(node);
           Iterator<? extends IndexedEntry<SSAInstruction>> it;
+          instructionsLoop:
            for (it = nodeInfo.relevantInstructions(); it.hasNext();) {
              InstructionEntry I = (InstructionEntry) it.next();
              final SSAInstruction inst = I.value();
@@ -788,6 +795,17 @@ public class WalaInformationImpl implements WalaInformation {
              if (inst instanceof SSAGetInstruction) {
                SSAGetInstruction get = (SSAGetInstruction) inst;
                if (!get.isStatic()) {
+                 WalaInformation info = WalaInformationImpl.this;
+                 Set<InstanceKey> getRef = Programs.referencedInstance(info, node, get.getRef());
+                 for (SSAGetInstruction cr : created) {
+                   Set<InstanceKey> crRef = Programs.referencedInstance(info, node, cr.getRef());
+                   // TODO multiple instances
+                   if (getRef.equals(crRef) && get.getDeclaredField().equals(cr.getDeclaredField())) {
+                     continue instructionsLoop;
+                   }
+                 }
+                 
+                 created.add(get);
                  int index = Integer.MIN_VALUE + res.size() + 1;
                  SSAPutInstruction put = getToPut(node, get);
                  InlinedInstructionImpl init = new InlinedInstructionImpl(

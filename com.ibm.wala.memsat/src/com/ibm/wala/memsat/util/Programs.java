@@ -111,6 +111,13 @@ public final class Programs {
 			return info.pointsTo(info.cgNodeInformation(inst.cgNode()).pointerKeyFor(use));
 	}
 	
+	public static Set<InstanceKey> referencedInstance(WalaInformation info, CGNode node, int use) {
+	  if (use<1)
+      return Collections.emptySet();
+    else 
+      return info.pointsTo(info.cgNodeInformation(node).pointerKeyFor(use));
+	}
+	
 	/**
 	 * Returns a set of instance keys that represent the array instance being read or written by the given instruction.
 	 * @requires some n : info.threads | info.concurrentInformation(n).actions().contains(inst)
