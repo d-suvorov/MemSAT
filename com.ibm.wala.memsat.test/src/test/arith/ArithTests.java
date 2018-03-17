@@ -13,6 +13,10 @@ import data.arith.Arithmetic;
 import data.arith.Relational;
 import data.arith.Logical;
 import data.arith.Bitwise;
+import data.arith.BasicControlFlow;
+import data.arith.PrimitiveArraysSimple;
+import data.arith.PrimitiveArraysRace1;
+import data.arith.PrimitiveArraysRace2;
 import test.ConcurrentTests;
 
 public abstract class ArithTests extends ConcurrentTests {
@@ -46,5 +50,25 @@ public abstract class ArithTests extends ConcurrentTests {
 	@Test
 	public final void testBitwise() {
 		test(getMiniatur(), Bitwise.class, true);
+	}
+	
+	@Test
+	public final void testBasicControlFlow() {
+		test(getMiniatur(), BasicControlFlow.class, true);
+	}
+	
+	@Test
+	public final void testPrimitiveArraysSimple() {
+		test(getMiniatur(), PrimitiveArraysSimple.class, true);
+	}
+	
+	@Test
+	public final void testPrimitiveArraysRace1() {
+		test(getMiniatur(), PrimitiveArraysRace1.class, true);
+	}
+	
+	@Test
+	public final void testPrimitiveArraysRace2() {
+		test(getMiniatur(), PrimitiveArraysRace2.class, false);
 	}
 }
