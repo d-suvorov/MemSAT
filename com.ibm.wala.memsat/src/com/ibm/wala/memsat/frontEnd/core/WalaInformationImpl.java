@@ -570,12 +570,13 @@ public class WalaInformationImpl implements WalaInformation {
 				public boolean equals(Object o) {
 					if (o==this) return true;
 					else if (o==null) return false;
-					else if (o instanceof InlinedInstruction) { 
-						final InlinedInstruction inlined = (InlinedInstruction)o;
+					else if (o instanceof InlinedInstructionImpl) { 
+						final InlinedInstructionImpl inlined = (InlinedInstructionImpl) o;
 						return 	node.equals(inlined.cgNode()) &&
 								index == inlined.instructionIndex() &&
 								(inst == null ? inlined.instruction() == null : inst.equals(inlined.instruction())) && 
-								base.equals(inlined.callStack());
+								base.equals(inlined.callStack()) &&
+								Objects.equals(bb, inlined.bb);
 					} else return false;
 				}
 
@@ -585,7 +586,6 @@ public class WalaInformationImpl implements WalaInformation {
 					for (CallSite ref : base) {
 						code += ref.hashCode();
 					}
-
 					return code;
 				}
 				
