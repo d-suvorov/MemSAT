@@ -7,9 +7,9 @@ public class Logical {
 	public static int a4 = 0;
 	
 	public static final void pTest() {
-		/*boolean r1 = !false;
+		boolean r1 = !false;
 		if (r1)
-			a1 = 1;*/
+			a1 = 1;
 		
 		boolean r2 = false && true;
 		if (!r2)
@@ -19,16 +19,16 @@ public class Logical {
 		if (r3)
 			a3 = 1;
 		
-		/*boolean lhs = 2 < 3;
+		boolean lhs = 2 < 3;
 		boolean rhs = 2 * 2 == 5;
 		if (lhs || rhs)
-			a4 = 1;*/
+			a4 = 1;
 	}
 	
 	public static final void pCheck() {
-		/*assert a1 == 1;*/
+		assert a1 == 1;
 		assert a2 == 1;
 		assert a3 == 1;
-		/*assert a4 == 1;*/
+		assert a4 == 1;
 	}
 }
