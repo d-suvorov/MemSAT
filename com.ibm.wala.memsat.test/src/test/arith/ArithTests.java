@@ -12,6 +12,7 @@ import com.ibm.wala.memsat.Miniatur;
 import data.arith.Arithmetic;
 import data.arith.Relational;
 import data.arith.Logical;
+import data.arith.Bitwise;
 import test.ConcurrentTests;
 
 public abstract class ArithTests extends ConcurrentTests {
@@ -40,5 +41,10 @@ public abstract class ArithTests extends ConcurrentTests {
 	@Test
 	public final void testLogical() {
 		test(getMiniatur(), Logical.class, true);
+	}
+	
+	@Test
+	public final void testBitwise() {
+		test(getMiniatur(), Bitwise.class, true);
 	}
 }
