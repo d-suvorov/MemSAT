@@ -33,6 +33,16 @@ import com.ibm.wala.util.graph.Graph;
 public final class Graphs {
 	private Graphs() {}
 	
+	public static final <T> boolean hasCycles(Graph<T> graph) {
+	  Graph<T> closure = transitiveClosure(graph);
+	  for (T node : closure) {
+	    if (successors(node, closure).contains(node)) {
+	      return true;
+	    }
+	  }
+	  return false;
+	}
+	
 	/**
 	 * Returns the roots of the given graph.
 	 * @return roots of the given graph

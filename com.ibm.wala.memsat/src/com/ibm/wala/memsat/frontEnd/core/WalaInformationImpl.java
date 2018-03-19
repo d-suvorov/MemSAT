@@ -76,6 +76,7 @@ import com.ibm.wala.memsat.frontEnd.slicer.PartialSlice;
 import com.ibm.wala.memsat.frontEnd.slicer.PartialSlice.InstructionEntry;
 import com.ibm.wala.memsat.frontEnd.types.MiniaturTypeData;
 import com.ibm.wala.memsat.frontEnd.types.MiniaturTypeDataFactory;
+import com.ibm.wala.memsat.util.Graphs;
 import com.ibm.wala.memsat.util.Programs;
 import com.ibm.wala.ssa.DefUse;
 import com.ibm.wala.ssa.IR;
@@ -647,6 +648,13 @@ public class WalaInformationImpl implements WalaInformation {
 				return calleeStack;
 			}
 			
+			private boolean correctCallerCalleeStacks(Stack<CallSite> caller, Stack<CallSite> callee) {
+			  CallSite calleeHead = callee.pop();
+			  boolean res = caller.equals(callee);
+			  callee.push(calleeHead);
+			  return res;
+			}
+			
 			private <E, R> R call(SSAInstruction inst, CGNode node,
 					Stack<CallSite> base,
 					Function<InlinedInstructionImpl, E> f, Reduce<E, R> r,
@@ -899,17 +907,30 @@ public class WalaInformationImpl implements WalaInformation {
 						}
 						
 						for (CGNode target : callGraph.getPossibleTargets(inst.cgNode(), x)) {
-							Graph<InlinedInstruction> targetInstructions =
-							  GraphSlicer.prune(res, i -> {
-							    if (!i.cgNode().equals(target))
-							      return false;
-							    CallSite callSite = ((InlinedInstructionImpl) i).base.peek();
-							    return callSite.fst.equals(x);
-							  });
+							List<InlinedInstruction> targetInstructions = new ArrayList<>();
+							for (InlinedInstruction i : res) {
+							  if (!i.cgNode().equals(target))
+                  continue;
+                
+                Stack<CallSite> instStack = inst.callStack();
+                Stack<CallSite> targetStack = i.callStack();
+                // Check that instStack and targetStack sizes differ by 1
+                // and instStack is a prefix of targetStack
+                if (!correctCallerCalleeStacks(instStack, targetStack))
+                  continue;
+                
+                CallSite callSite = targetStack.peek();
+                // Possibly redundant check (enforced by program logic)?
+                if (!callSite.snd.equals(inst.cgNode()))
+                  continue;
+                // Check target program counter
+                if (callSite.fst.equals(x))
+                  targetInstructions.add(i);
+							}
 
 							// Add edges to target
 							for (InlinedInstruction targetInst : targetInstructions) {
-								if (targetInstructions.getPredNodeCount(targetInst) == 0) {
+								if (res.getPredNodeCount(targetInst) == 0) {
 									res.addEdge(inst, targetInst);
 								}
 							}
@@ -924,7 +945,7 @@ public class WalaInformationImpl implements WalaInformation {
 							
 							// Add edges from target to successors of inst in the same node
 							for (InlinedInstruction targetInst : targetInstructions) {
-								if (targetInstructions.getSuccNodeCount(targetInst) == 0) {
+								if (res.getSuccNodeCount(targetInst) == 0) {
 									Iterator<InlinedInstruction> succIter = res.getSuccNodes(inst);
 									while (succIter.hasNext()) {
 										InlinedInstruction succ = succIter.next();
@@ -940,6 +961,9 @@ public class WalaInformationImpl implements WalaInformation {
 									}
 								}
 							}
+							
+							// System.out.println("Added edges from " + inst + " to " + target);
+							// System.out.println("Has cycles: " + Graphs.hasCycles(res));
 						}
 					}
 				}
