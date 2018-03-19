@@ -11,6 +11,7 @@ import com.ibm.wala.memsat.Miniatur;
 
 import data.interesting.FinalWrapperFactory;
 import data.interesting.FinalWrapperFactoryBug;
+import data.interesting.MultipleObjects;
 import test.ConcurrentTests;
 
 public abstract class InterestingTests extends ConcurrentTests {
@@ -34,5 +35,10 @@ public abstract class InterestingTests extends ConcurrentTests {
 	@Test
 	public final void testFinalWrapperFactoryBug() {
 		test(getMiniatur(), FinalWrapperFactoryBug.class, false);
+	}
+	
+	@Test
+	public final void testMultipleObjects() {
+		test(getMiniatur(), MultipleObjects.class, true);
 	}
 }
