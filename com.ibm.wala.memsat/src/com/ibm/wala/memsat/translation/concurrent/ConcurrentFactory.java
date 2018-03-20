@@ -56,6 +56,7 @@ import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.instance.Bounds;
+import kodkod.instance.Tuple;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.util.collections.Containers;
@@ -339,7 +340,7 @@ final class ConcurrentFactory {
 			final Set<InstanceKey> ref = referencedInstance(base.info(), inst);
 			if (!ref.isEmpty()) { 
 				loc.addAll( constants.instanceAtoms(tuples, ref)) ;
-			} 
+			}
 		} else {
 			assert obj instanceof SSAArrayReferenceInstruction;
 			final Set<InstanceKey> ref = referencedArray(base.info(), inst);
@@ -347,6 +348,25 @@ final class ConcurrentFactory {
 			loc.addAll( constants.constantAtoms(tuples, IRType.INTEGER) );
 		} 
 		return loc;
+	}
+	
+	public final Tuple locationFieldAtom(TupleFactory tuples, InlinedInstruction inst) {
+	  return tuples.tuple(fieldExprs.get(instFields.get(inst)));
+	}
+	
+	public final TupleSet locationInstancesAtoms(TupleFactory tuples, InlinedInstruction inst) {
+	  final SSAInstruction obj = inst.instruction();
+	  if (!(obj instanceof SSAFieldAccessInstruction)) {
+      throw new IllegalArgumentException();
+    }
+	  
+    final TupleSet loc = tuples.noneOf(1);
+    final ConstantFactory constants = base.constants();
+    final Set<InstanceKey> ref = referencedInstance(base.info(), inst);
+    if (!ref.isEmpty()) { 
+      loc.addAll( constants.instanceAtoms(tuples, ref)) ;
+    }
+    return loc;
 	}
 	
 	/**

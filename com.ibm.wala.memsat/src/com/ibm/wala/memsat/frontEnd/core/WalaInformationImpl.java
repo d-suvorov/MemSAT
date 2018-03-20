@@ -784,6 +784,7 @@ public class WalaInformationImpl implements WalaInformation {
 			
 			// TODO refactor
 			private List<InlinedInstructionImpl> defaultInitInstructions() {
+			  Set<SSAGetInstruction> created = new HashSet<>();
         List<InlinedInstructionImpl> res = new ArrayList<>();
         for (CGNode node : callGraph) {
           if (node.getMethod().getSignature().contains("registerNatives")) {
@@ -792,7 +793,6 @@ public class WalaInformationImpl implements WalaInformation {
             continue;
           }
           
-          Set<SSAGetInstruction> created = new HashSet<>();
           WalaCGNodeInformation nodeInfo = cgNodeInformation(node);
           Iterator<? extends IndexedEntry<SSAInstruction>> it;
           instructionsLoop:
@@ -803,8 +803,11 @@ public class WalaInformationImpl implements WalaInformation {
              if (inst instanceof SSAGetInstruction) {
                SSAGetInstruction get = (SSAGetInstruction) inst;
                if (!get.isStatic()) {
-                 WalaInformation info = WalaInformationImpl.this;
+                 WalaInformationImpl info = WalaInformationImpl.this;
                  Set<InstanceKey> getRef = Programs.referencedInstance(info, node, get.getRef());
+                 if (getRef.size() > 1) {
+                   throw new AssertionError("are settins the same?");
+                 }
                  for (SSAGetInstruction cr : created) {
                    Set<InstanceKey> crRef = Programs.referencedInstance(info, node, cr.getRef());
                    // TODO multiple instances
@@ -814,12 +817,17 @@ public class WalaInformationImpl implements WalaInformation {
                  }
                  
                  created.add(get);
-                 int index = Integer.MIN_VALUE + res.size() + 1;
-                 SSAPutInstruction put = getToPut(node, get);
-                 InlinedInstructionImpl init = new InlinedInstructionImpl(
-                   node, index, null, put, new LinkedStack<CallSite>());
-                 init.isInitWrite = true;
-                 res.add(init);
+                 
+                 InstanceKey getRefKey = getRef.iterator().next();
+                 int allocatedCount = (int) info.allocatedObjectCounts.get(getRefKey);
+                 for (int i = 0; i < allocatedCount; i++) {
+                   int index = Integer.MIN_VALUE + res.size() + 1;
+                   SSAPutInstruction put = getToPut(node, get);
+                   InlinedInstructionImpl init = new InlinedInstructionImpl(
+                     node, index, null, put, new LinkedStack<CallSite>());
+                   init.isInitWrite = true;
+                   res.add(init);
+                 }
                }
              }
            }

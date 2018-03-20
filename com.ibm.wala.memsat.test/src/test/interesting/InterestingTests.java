@@ -22,7 +22,7 @@ public abstract class InterestingTests extends ConcurrentTests {
 	}
 	
 	private Miniatur getMiniatur()  {
-		Miniatur mini = miniatur(4);
+		Miniatur mini = miniatur(10);
 		mini.options().kodkodOptions().setBitwidth(8);
 		return mini;
 	}

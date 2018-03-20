@@ -23,8 +23,12 @@ import static com.ibm.wala.memsat.util.Programs.instructions;
 import static com.ibm.wala.memsat.util.Programs.instructionsOfType;
 import static com.ibm.wala.memsat.util.Programs.visibleWrites;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.ibm.wala.memsat.concurrent.Execution;
@@ -32,6 +36,8 @@ import com.ibm.wala.memsat.concurrent.Program.BoundsBuilder;
 import com.ibm.wala.memsat.frontEnd.InlinedInstruction;
 import com.ibm.wala.memsat.frontEnd.WalaInformation;
 import com.ibm.wala.ssa.SSAFieldAccessInstruction;
+import com.ibm.wala.ssa.SSAPutInstruction;
+import com.ibm.wala.types.FieldReference;
 import com.ibm.wala.util.graph.Graph;
 
 import kodkod.ast.Relation;
@@ -154,9 +160,20 @@ final class ConcurrentBoundsBuilder implements BoundsBuilder {
 	 * @effects this.bounds.relations' = this.bounds.relations + exec.location
 	 */
 	private void boundLocations(Execution exec) {
-		final TupleSet l = tuples.noneOf(2), u = tuples.noneOf(2);
-
-		for(InlinedInstruction inst : memoryAccesses) { 
+	  Map<FieldReference, List<InlinedInstruction>> defaultInitsByField = new HashMap<>();
+	  
+		final TupleSet l = tuples.noneOf(2), u = tuples.noneOf(2); 
+		for (InlinedInstruction inst : memoryAccesses) {
+		  if (inst.isInitWrite()) {
+		    SSAPutInstruction put = (SSAPutInstruction) inst.instruction();
+		    FieldReference fRef = put.getDeclaredField();
+		    List<InlinedInstruction> insts = defaultInitsByField.get(fRef);
+		    if (insts == null) {
+		      defaultInitsByField.put(fRef, insts = new ArrayList<>());
+		    }
+		    insts.add(inst);
+		    continue;
+		  }
 			final TupleSet instAtoms = actionAtoms(inst);
 			final TupleSet locAtoms = factory.locationAtoms(tuples, inst);
 			u.addAll( instAtoms.product(locAtoms) );
@@ -164,6 +181,30 @@ final class ConcurrentBoundsBuilder implements BoundsBuilder {
 				if (locAtoms.size()==1 || (locAtoms.size()==2 && instAtoms.size()==1)) // statically known location, bound exactly
 					l.addAll( instAtoms.product(locAtoms) );
 			}
+		}
+
+		final TupleSet defBnd = tuples.noneOf(2);
+		for (FieldReference fRef : defaultInitsByField.keySet()) {
+		  List<InlinedInstruction> inits = defaultInitsByField.get(fRef);
+		  InlinedInstruction initsHead = inits.iterator().next();
+		  TupleSet instAtoms = actionAtoms(initsHead);
+		  Tuple ft = factory.locationFieldAtom(tuples, initsHead);
+		  TupleSet its = factory.locationInstancesAtoms(tuples, initsHead);
+		  
+		  if (inits.size() != instAtoms.size() || instAtoms.size() != its.size()) {
+		    throw new AssertionError("something went wrong");
+		  }
+		  
+		  List<Tuple> instAtomsList = new ArrayList<>(instAtoms);
+		  int initOff = 0;
+		  for (Tuple it : its) {
+		    Tuple atom = instAtomsList.get(initOff);
+		    l.add(atom.product(ft));
+		    l.add(atom.product(it));
+		    u.add(atom.product(ft));
+        u.add(atom.product(it));
+		    initOff++;
+		  }
 		}
 		bounds.bound(exec.location(), l, u);
 	}
