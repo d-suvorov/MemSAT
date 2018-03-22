@@ -36,6 +36,7 @@ import com.ibm.wala.memsat.frontEnd.WalaConcurrentInformation;
 import com.ibm.wala.memsat.frontEnd.WalaInformation;
 import com.ibm.wala.memsat.translation.MethodTranslation;
 import com.ibm.wala.memsat.util.Nodes;
+import com.ibm.wala.ssa.SSAPutInstruction;
 import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.graph.Graph;
 import com.ibm.wala.util.graph.traverse.DFS;
@@ -199,7 +200,12 @@ final class ConcurrentProgram implements Program {
 				sv.add( guard.iff(action.some()) );
 				
 				if (inst.isInitWrite()) {
-				  sv.add(action.join(exec.v()).eq(IntConstant.constant(0).toBitset()));
+				  SSAPutInstruction put = (SSAPutInstruction) inst.instruction();
+				  if (put.getDeclaredFieldType().isPrimitiveType()) {
+				    sv.add(action.join(exec.v()).eq(IntConstant.constant(0).toBitset()));
+				  } else {
+				    sv.add(action.join(exec.v()).eq(nil()));
+				  }
 				}
 				
 				final Expression location = handler.locationOf(inst);

@@ -1,6 +1,6 @@
 package data.finals;
 
-public class Test11 {	
+public class Test12 {
 	public static class A {
 		final Object f;
 		
@@ -20,7 +20,7 @@ public class Test11 {
 		assert ta != null;
 		if (ta != null) {
 			// Prohibited by the finals semantics
-			assert ta.f == null;
+			assert ta.f != null;
 		}
 	}
 }

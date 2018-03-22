@@ -11,7 +11,7 @@ import com.ibm.wala.types.MethodReference;
 
 public class JMMFinalsTests extends FinalsTests {
 	public JMMFinalsTests() {
-		super(new HashSet<String>(Arrays.asList("02", "03", "04", "05", "06", "08", "09")));
+		super(new HashSet<String>(Arrays.asList("02", "03", "04", "05", "06", "08", "09", "12")));
 	}
 
 	@Override

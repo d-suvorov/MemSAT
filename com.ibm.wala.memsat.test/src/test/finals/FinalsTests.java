@@ -21,6 +21,7 @@ import data.finals.Test08;
 import data.finals.Test09;
 import data.finals.Test10;
 import data.finals.Test11;
+import data.finals.Test12;
 import test.ConcurrentTests;
 
 public abstract class FinalsTests extends ConcurrentTests {
@@ -88,6 +89,11 @@ public abstract class FinalsTests extends ConcurrentTests {
 	
 	@Test
 	public final void test11() {
-		test(miniatur(15), Test11.class, sat("11"));
+		test(miniatur(4), Test11.class, sat("11"));
+	}
+	
+	@Test
+	public final void test12() {
+		test(miniatur(4), Test12.class, sat("12"));
 	}
 }
