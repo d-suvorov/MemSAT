@@ -26,16 +26,23 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import com.ibm.wala.classLoader.NewSiteReference;
 import com.ibm.wala.ipa.callgraph.CGNode;
+import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.memsat.Options;
 import com.ibm.wala.memsat.frontEnd.IRType;
 import com.ibm.wala.memsat.frontEnd.WalaInformation;
 import com.ibm.wala.memsat.util.Strings;
+import com.ibm.wala.types.TypeName;
 import com.ibm.wala.types.TypeReference;
+import com.ibm.wala.util.collections.ComposedIterator;
+import com.ibm.wala.util.collections.FilterIterator;
+import com.ibm.wala.util.collections.MapIterator;
 import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.graph.traverse.DFS;
 
@@ -229,7 +236,7 @@ public final class ConstantFactory {
     final TupleSet s = factory.noneOf(2);
     for (InstanceKey ik : instances.keySet()) {
       Iterator<Pair<CGNode, NewSiteReference>> itr;
-      for (itr = ik.getCreationSites(info.callGraph()); itr.hasNext(); ) {
+      for (itr = getCreationSites(ik, info.callGraph()); itr.hasNext(); ) {
         CGNode crNode = itr.next().fst;
         CGNode root = threadRootByNode(info, crNode);
         if (root == null)
@@ -240,6 +247,33 @@ public final class ConstantFactory {
       }
     }
     return s;
+  }
+  
+  // TODO temporary solution instead of com.ibm.wala.ipa.callgraph.propagation.ConcreteTypeKey.getCreationSites(CallGraph)
+  // which compares classloaders as well
+  private Iterator<Pair<CGNode, NewSiteReference>> getCreationSites(InstanceKey ik, CallGraph cg) {
+    return new ComposedIterator<CGNode, Pair<CGNode, NewSiteReference>>(cg.iterator()) {
+      @Override
+      public Iterator<? extends Pair<CGNode, NewSiteReference>> makeInner(final CGNode outer) {
+        return new MapIterator<NewSiteReference, Pair<CGNode, NewSiteReference>>(
+            new FilterIterator<NewSiteReference>(
+                outer.iterateNewSites(),
+                new Predicate<NewSiteReference>() {
+                  @Override public boolean test(NewSiteReference o) {
+                    TypeName oType = o.getDeclaredType().getName();
+                    TypeName ikType = ik.getConcreteType().getName();
+                    return oType.equals(ikType);
+                  }
+                }
+            ),
+            new Function<NewSiteReference, Pair<CGNode, NewSiteReference>>() {
+              @Override
+              public Pair<CGNode, NewSiteReference> apply(NewSiteReference object) {
+                return Pair.make(outer, object);
+              }
+            });
+      }
+    };
   }
   
   private CGNode threadRootByNode(WalaInformation info, CGNode node) {
