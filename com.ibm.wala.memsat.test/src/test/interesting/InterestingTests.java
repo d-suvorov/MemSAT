@@ -9,6 +9,8 @@ import org.junit.Test;
 
 import com.ibm.wala.memsat.Miniatur;
 
+import data.interesting.BlockingFactoryReadInitialized;
+import data.interesting.BlockingFactoryReadUninitialized;
 import data.interesting.FinalWrapperFactory;
 import data.interesting.FinalWrapperFactoryBug;
 import data.interesting.MultipleObjects;
@@ -21,24 +23,34 @@ public abstract class InterestingTests extends ConcurrentTests {
 		test(miniatur, INTERESTING_TESTS, graph(threadMethods("p", testCase)), sat);
 	}
 	
-	private Miniatur getMiniatur()  {
-		Miniatur mini = miniatur(10);
+	private Miniatur getMiniatur(int speculations) {
+		Miniatur mini = miniatur(speculations);
 		mini.options().kodkodOptions().setBitwidth(8);
 		return mini;
 	}
 	
 	@Test
+	public final void testBlockingFactoryReadInitialized() {
+		test(getMiniatur(3), BlockingFactoryReadInitialized.class, true);
+	}
+	
+	@Test
+	public final void testBlockingFactoryReadUninitialized() {
+		test(getMiniatur(3), BlockingFactoryReadUninitialized.class, false);
+	}
+	
+	@Test
 	public final void testFinalWrapperFactory() {
-		test(getMiniatur(), FinalWrapperFactory.class, true);
+		test(getMiniatur(10), FinalWrapperFactory.class, true);
 	}
 	
 	@Test
 	public final void testFinalWrapperFactoryBug() {
-		test(getMiniatur(), FinalWrapperFactoryBug.class, false);
+		test(getMiniatur(10), FinalWrapperFactoryBug.class, false);
 	}
 	
 	@Test
 	public final void testMultipleObjects() {
-		test(getMiniatur(), MultipleObjects.class, true);
+		test(getMiniatur(3), MultipleObjects.class, true);
 	}
 }

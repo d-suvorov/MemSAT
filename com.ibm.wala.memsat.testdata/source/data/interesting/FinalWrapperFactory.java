@@ -8,13 +8,12 @@ public class FinalWrapperFactory {
       x = 1;
     }
   }
-  
+
   private FinalWrapper wrapper;
 
   public Singleton get() {
-    FinalWrapper w;
-    /*FinalWrapper w = wrapper;
-    if (w == null) {*/
+    FinalWrapper w = wrapper;
+    if (w == null) {
       synchronized(this) {
         w = wrapper;
         if (w == null) {
@@ -22,7 +21,7 @@ public class FinalWrapperFactory {
           wrapper = w;
         }
       }
-    // }
+    }
     return w.instance;
   }
 
@@ -39,7 +38,7 @@ public class FinalWrapperFactory {
     Singleton rs1 = factory.get();
     assert rs1.x == 1;
   }
-  
+
   public static final void p2() {
     Singleton rs2 = factory.get();
     assert rs2.x == 1;
