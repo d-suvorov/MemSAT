@@ -19,6 +19,7 @@ import static com.ibm.wala.memsat.frontEnd.IRType.OBJECT;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -54,6 +55,7 @@ import kodkod.ast.IntExpression;
 import kodkod.ast.Relation;
 import kodkod.engine.Evaluator;
 import kodkod.instance.Bounds;
+import kodkod.instance.Tuple;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.util.collections.Containers;
@@ -234,16 +236,22 @@ public final class ConstantFactory {
   
   public TupleSet constructsBounds(TupleFactory factory, WalaInformation info) {
     final TupleSet s = factory.noneOf(2);
-    for (InstanceKey ik : instances.keySet()) {
+    for (InstanceKey key : instances.keySet()) {
+      Relation[] instanceRelations = instances.get(key);
+      List<CGNode> threads = new ArrayList<>();
       Iterator<Pair<CGNode, NewSiteReference>> itr;
-      for (itr = getCreationSites(ik, info.callGraph()); itr.hasNext(); ) {
-        CGNode crNode = itr.next().fst;
-        CGNode root = threadRootByNode(info, crNode);
-        if (root == null)
-          continue;
-        for (Relation instance : instances.get(ik)) {
-          s.add(factory.tuple(instance, root));
+      for (itr = getCreationSites(key, info.callGraph()); itr.hasNext(); ) {
+        CGNode node = itr.next().fst;
+        for (CGNode root : threadRootsByNode(info, node)) {
+          threads.add(root);
         }
+      }
+      if (instanceRelations.length != threads.size()) {
+        throw new AssertionError("something went wrong");
+      }
+      for (int i = 0; i < instanceRelations.length; i++) {
+        Tuple t = factory.tuple(instanceRelations[i], threads.get(i));
+        s.add(t);
       }
     }
     return s;
@@ -276,18 +284,16 @@ public final class ConstantFactory {
     };
   }
   
-  private CGNode threadRootByNode(WalaInformation info, CGNode node) {
-    Set<CGNode> candidates = new HashSet<>();
+  // TODO rewrite
+  private List<CGNode> threadRootsByNode(WalaInformation info, CGNode node) {
+    List<CGNode> res = new ArrayList<>();
     for (CGNode root : info.threads()) {
       Set<CGNode> start = new HashSet<>(Collections.singleton(root));
-      Collection<CGNode> reachable =
-        DFS.getReachableNodes(info.callGraph(), start);
+      Collection<CGNode> reachable = DFS.getReachableNodes(info.callGraph(), start);
       if (reachable.contains(node))
-        candidates.add(root);
+        res.add(root);
     }
-    if (candidates.size() != 1)
-      return null;
-    return candidates.iterator().next();
+    return res;
   }
 
 	/**
