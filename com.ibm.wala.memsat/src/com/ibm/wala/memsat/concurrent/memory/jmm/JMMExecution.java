@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.memsat.concurrent.Program;
 import com.ibm.wala.memsat.concurrent.memory.AbstractExecution;
@@ -146,11 +147,15 @@ public final class JMMExecution extends AbstractExecution {
 	    }
 	  }
 	  
+	  Map<InlinedInstruction, IField> referencedFields = Programs.referencedFields(p.info());
 	  List<Expression> fz = new ArrayList<>();
 	  for (InlinedInstruction inst : Programs.instructions(p.info())) {
 	    CGNode node = inst.cgNode();
 	    if (node.getMethod().isInit() && inst.action() != Action.FREEZE) {
 	      if (inst.instruction() instanceof SSAFieldAccessInstruction) {
+	        IField refField = referencedFields.get(inst);
+	        if (!refField.isFinal())
+	          continue;
           final SSAFieldAccessInstruction access = (SSAFieldAccessInstruction) inst.instruction();
           if (access instanceof SSAPutInstruction) {
             Expression field = p.getReferencedField(inst);
