@@ -161,9 +161,7 @@ public final class JMMExecution extends AbstractExecution {
         }
 	    }
 	  }
-	  // TODO Wow such a hack
-	  Expression empty = po.difference(po);
-	  return fz.isEmpty() ? empty : Expression.union(fz);
+	  return fz.isEmpty() ? Nodes.empty(2) : Expression.union(fz);
 	}
 
 	
