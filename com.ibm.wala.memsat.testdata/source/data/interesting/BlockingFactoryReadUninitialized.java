@@ -1,14 +1,6 @@
 package data.interesting;
 
 public class BlockingFactoryReadUninitialized {
-  public static final class Singleton {
-    int x;
-    
-    Singleton() {
-      x = 1;
-    }
-  }
-  
   private Singleton instance;
 
   public Singleton get() {

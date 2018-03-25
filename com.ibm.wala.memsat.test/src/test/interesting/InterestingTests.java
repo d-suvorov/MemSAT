@@ -11,7 +11,8 @@ import com.ibm.wala.memsat.Miniatur;
 
 import data.interesting.BlockingFactoryReadInitialized;
 import data.interesting.BlockingFactoryReadUninitialized;
-import data.interesting.FinalWrapperFactory;
+import data.interesting.FinalWrapperFactoryInitialized;
+import data.interesting.FinalWrapperFactoryUninitialized;
 import data.interesting.FinalWrapperFactoryBug;
 import data.interesting.MultipleObjects;
 import test.ConcurrentTests;
@@ -40,8 +41,13 @@ public abstract class InterestingTests extends ConcurrentTests {
 	}
 	
 	@Test
-	public final void testFinalWrapperFactory() {
-		test(getMiniatur(3), FinalWrapperFactory.class, true);
+	public final void testFinalWrapperFactoryInitialized() {
+		test(getMiniatur(3), FinalWrapperFactoryInitialized.class, true);
+	}
+	
+	@Test
+	public final void testFinalWrapperFactoryUninitialized() {
+		test(getMiniatur(3), FinalWrapperFactoryUninitialized.class, false);
 	}
 	
 	@Test

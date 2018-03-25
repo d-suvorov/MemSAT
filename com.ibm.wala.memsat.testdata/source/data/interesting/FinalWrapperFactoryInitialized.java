@@ -1,14 +1,6 @@
 package data.interesting;
 
-public class FinalWrapperFactory {
-  public static final class Singleton {
-    int x;
-    
-    Singleton() {
-      x = 1;
-    }
-  }
-
+public class FinalWrapperFactoryInitialized {
   private FinalWrapper wrapper;
 
   public Singleton get() {
@@ -32,7 +24,7 @@ public class FinalWrapperFactory {
     }
   }
   
-  public static FinalWrapperFactory factory = new FinalWrapperFactory();
+  public static FinalWrapperFactoryInitialized factory = new FinalWrapperFactoryInitialized();
   
   public static final void p1() {
     Singleton rs1 = factory.get();

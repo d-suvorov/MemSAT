@@ -1,14 +1,14 @@
 package data.interesting;
 
-public class FinalWrapperFactoryBug {
+public class FinalWrapperFactoryUninitialized {
   private FinalWrapper wrapper;
 
   public Singleton get() {
     FinalWrapper w = wrapper;
-    if (w == null) { // check 1
+    if (w == null) {
       synchronized(this) {
         w = wrapper;
-        if (w == null) { // check2
+        if (w == null) {
           w = new FinalWrapper(new Singleton());
           wrapper = w;
         }
@@ -18,21 +18,21 @@ public class FinalWrapperFactoryBug {
   }
 
   private static class FinalWrapper {
-    public Singleton instance;
+    public final Singleton instance;
     public FinalWrapper(Singleton instance) {
       this.instance = instance;
     }
   }
   
-  public static FinalWrapperFactoryBug factory = new FinalWrapperFactoryBug();
+  public static FinalWrapperFactoryUninitialized factory = new FinalWrapperFactoryUninitialized();
   
   public static final void p1() {
     Singleton rs1 = factory.get();
-    assert rs1.x == 0;
+    assert rs1.x == 1;
   }
-  
+
   public static final void p2() {
     Singleton rs2 = factory.get();
-    assert rs2.x == 1;  
+    assert rs2.x == 0;
   }
 }
