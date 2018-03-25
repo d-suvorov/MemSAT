@@ -606,29 +606,32 @@ public abstract class JavaMemoryModel implements MemoryModel {
 	  Formula r1LocationFrozenByF = main.locationOf(r1).join(main.freezes()).eq(fr);
 	  Formula sameLocation = main.locationOf(w).eq(main.locationOf(r2));
 	  
+	  Formula pre = aIsAReadOfFinal.not().and(r1LocationFrozenByF);
 	  Formula chain = w.product(fr).in(main.bhb())
 	    .and(fr.product(a).in(main.bhb()))
 	    .and(a.product(r1).in(main.mc()))
 	    .and(r1.product(r2).in(main.dc()));
-	  Formula fhbRule = chain.implies(w.product(r2).in(main.fhb()));
 	  
 	  Expression aDomain = prog.allOf(
 	    NORMAL_READ, VOLATILE_READ, NORMAL_WRITE, VOLATILE_WRITE, LOCK, UNLOCK
 	  );
-	  
-	  Formula res = aIsAReadOfFinal.not().and(r1LocationFrozenByF).and(sameLocation)
-	    .implies(fhbRule)
-	      .forAll(
-	        w.oneOf(writes(prog)).and(
-	          a.oneOf(aDomain).and(
-	            fr.oneOf(prog.allOf(Action.FREEZE))).and(
-	              r1.oneOf(reads(prog)).and(
-	                r2.oneOf(reads(prog)
-	              )
-	            )
-	          )
-	        )
-	      );
+    
+    Formula res = sameLocation.implies(
+      w.product(r2).in(main.fhb())
+        .iff(
+          pre.and(chain).forSome(
+            a.oneOf(aDomain).and(
+              fr.oneOf(prog.allOf(Action.FREEZE)).and(
+                r1.oneOf(reads(prog))
+              )
+            )
+          )
+        )
+    ).forAll(
+      w.oneOf(writes(prog)).and(
+        r2.oneOf(reads(prog))
+      )
+    );
 	  
 	  return res;
 	}
