@@ -41,12 +41,12 @@ public abstract class InterestingTests extends ConcurrentTests {
 	
 	@Test
 	public final void testFinalWrapperFactory() {
-		test(getMiniatur(10), FinalWrapperFactory.class, true);
+		test(getMiniatur(3), FinalWrapperFactory.class, true);
 	}
 	
 	@Test
 	public final void testFinalWrapperFactoryBug() {
-		test(getMiniatur(10), FinalWrapperFactoryBug.class, false);
+		test(getMiniatur(3), FinalWrapperFactoryBug.class, false);
 	}
 	
 	@Test
