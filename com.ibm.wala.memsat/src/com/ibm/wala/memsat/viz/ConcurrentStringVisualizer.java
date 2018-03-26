@@ -19,6 +19,11 @@ import static com.ibm.wala.memsat.util.Programs.relevantMethods;
 import static com.ibm.wala.memsat.util.Strings.nodeNames;
 import static com.ibm.wala.util.graph.traverse.DFS.iterateDiscoverTime;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -46,8 +51,10 @@ import com.ibm.wala.ssa.SSAAbstractInvokeInstruction;
 import com.ibm.wala.ssa.SSAArrayReferenceInstruction;
 import com.ibm.wala.ssa.SSAFieldAccessInstruction;
 import com.ibm.wala.types.TypeReference;
+import com.ibm.wala.util.graph.Graph;
 
 import kodkod.ast.Expression;
+import kodkod.ast.Relation;
 import kodkod.engine.Solution;
 import kodkod.instance.Tuple;
 import kodkod.instance.TupleSet;
@@ -88,6 +95,7 @@ final class ConcurrentStringVisualizer extends StringVisualizer<ConcurrentTransl
 		s.append("solution interpretation:\n");
 		s.append(" main execution");
 		execution(s, just.execution(), methodNames);
+		dumpExecutionInDotFormat("/tmp/memsat.dot", "E", just.execution(), methodNames);
 		
 		if (!just.speculations().isEmpty()) {		
 			final List<? extends Execution> speculations = just.speculations();
@@ -139,6 +147,24 @@ final class ConcurrentStringVisualizer extends StringVisualizer<ConcurrentTransl
 		}
 		writeSeen(s, exec);
 		orderings(s, exec);
+	}
+	
+	private void vizualizeRelationForDot(
+	    StringBuilder s, Expression r, String name, String color)
+	{
+	  s.append("\n");
+	  final TupleSet ts = eval.evaluate(r);
+	  for (Tuple t : ts) {
+	    s.append("  ")
+	      .append(t.atom(0))
+	      .append("->")
+	      .append(t.atom(1))
+	      .append(" [label=\"")
+	      .append(name)
+	      .append("\", color=")
+	      .append(color)
+	      .append("];\n");
+	  }
 	}
 	
 	/**
@@ -203,11 +229,34 @@ final class ConcurrentStringVisualizer extends StringVisualizer<ConcurrentTransl
 		return ret;
 	}
 	
+	private final Map<InlinedInstruction, String> executedInstructionsForDot(Execution exec, Map<CGNode,String> methodNames) { 
+    final Map<InlinedInstruction, String> ret = new LinkedHashMap<InlinedInstruction, String>();
+    for(CGNode n : info.threads()) { 
+      final WalaConcurrentInformation cinfo = info.concurrentInformation(n);
+      for(InlinedInstruction inst : cinfo.actions()) { 
+        if (eval.evaluate(exec.action(inst).some())) { 
+          String instString = instruction(exec, inst);
+          if (inst.action() == Action.FREEZE) {
+            instString = instString + "(" + methodNames.get(inst.cgNode()) + ")";
+          }
+          final String lineString = lineString(inst);
+          StringBuilder s = new StringBuilder();
+          if (!lineString.isEmpty()) {
+            s.append(" | :").append(lineString);
+          }
+          s.append(" | ").append(instString);
+          ret.put(inst, s.toString());
+        }
+      }
+    }
+    return ret;
+  }
+	
 	private final String lineString(InlinedInstruction inst) {
 	  if (inst.action() == Action.FREEZE)
-	    return "freeze";
+	    return "";
 	  if (inst.isInitWrite())
-	    return "initWrite";
+	    return "";
 	  return line(inst.cgNode().getMethod(), inst.instructionIndex());
 	}
 
@@ -236,7 +285,7 @@ final class ConcurrentStringVisualizer extends StringVisualizer<ConcurrentTransl
 			final Object writeVal = writer.evaluate(writer.fromObj(exec.action(inst).join(exec.v())), eval);
 			return "write(" + writeLoc + ", " + writeVal + ")";
 		case FREEZE:
-		  return act.name().toLowerCase() + "(" + inst.cgNode()  + ")";
+		  return act.name().toLowerCase();
 		default : 
 			throw new AssertionError("unreachable");
 		}
@@ -285,6 +334,104 @@ final class ConcurrentStringVisualizer extends StringVisualizer<ConcurrentTransl
 			return atom(instance) + "[" + idx + "]";
 		}
 	}
+	
+	private void dumpExecutionInDotFormat(String filename, 
+	    String name, Execution exec, Map<CGNode,String> methodNames)
+	{ 
+	  String graph = dumpExecutionInDotFormatImpl(name, exec, methodNames);
+	  
+    Path path = Paths.get(filename);
+    try {
+      Files.write(path, graph.getBytes(),
+          StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+	
+	private String dumpExecutionInDotFormatImpl(
+      String name, Execution exec, Map<CGNode,String> methodNames)
+  { 
+	  StringBuilder s = new StringBuilder();
+	  s.append("digraph ").append(name).append(" {\n")
+	    .append("  forcelabels=true;\n")
+	    .append("  node [style=\"rounded,filled\", shape=record, fontsize=10, margin=0.15];\n\n");
+	  
+    final Map<InlinedInstruction,String> execed = executedInstructionsForDot(exec, methodNames);
+    for (Iterator<CGNode> threadItr = 
+        iterateDiscoverTime(info.threads(), root(info.threads())); 
+        threadItr.hasNext(); )
+    {
+      final CGNode n = threadItr.next();
+      final WalaConcurrentInformation cinfo = info.concurrentInformation(n);
+      String methodName = methodNames.get(n);
+      if (methodName.startsWith("<") && methodName.endsWith(">")) {
+        methodName = methodName.substring(1, methodName.length() - 1);
+      }
+      s.append("  subgraph cluster_").append(methodName).append(" {\n");
+      s.append("    #node [style=filled];\n");
+      StringBuilder edges = new StringBuilder();
+      Graph<InlinedInstruction> to = cinfo.threadOrder();
+      for (Iterator<InlinedInstruction> instItr = 
+        iterateDiscoverTime(to, cinfo.start()); instItr.hasNext(); ) 
+      { 
+        final InlinedInstruction inst = instItr.next();
+        if (execed.containsKey(inst)) {
+          Object atom = atom(eval.evaluate(exec.action(inst)));
+          s.append("    ")
+            .append(atom)
+            .append(" [label=\"")
+            .append(atom)
+            .append(execed.get(inst))
+            .append("\"];\n");
+          for (Iterator<InlinedInstruction> succItr = 
+              to.getSuccNodes(inst); succItr.hasNext(); ) 
+          {
+            InlinedInstruction succ = succItr.next();
+            if (execed.containsKey(succ)) {
+              Object succAtom = atom(eval.evaluate(exec.action(succ)));
+              edges.append("    ")
+                .append(atom).append("->")
+                .append(succAtom).append(";\n");
+            }
+          }
+        }
+      }
+      s.append(edges);
+      s.append("    label = \"" + methodName +  "\";\n");
+      s.append("  }\n\n");
+    }
+    vizualizeRelationForDot(s, exec.w(), "ws", "red");
+    
+    String generateFinalsOrdersPropValue = System.getProperty("generate.finals.orders");
+    // System.out.println("generate.finals.orders=" + generateFinalsOrdersPropValue);
+    boolean generateFinalsOrders = Boolean.parseBoolean(generateFinalsOrdersPropValue);
+    for (Map.Entry<Expression, String> e : exec.viz().entrySet()) {
+      Expression ord = e.getKey();
+      String ordName = e.getValue();
+      if (!generateFinalsOrders && isFinalsOrder(ordName))
+        continue;
+      vizualizeRelationForDot(s, ord, ordName, getColor(e.getValue()));
+    }
+    
+    s.append("}\n");
+    return s.toString();
+  }
+	
+	private static boolean isFinalsOrder(String name) {
+	  return name.equals("mc") || name.equals("dc");
+	}
+	
+	private static String getColor(String ordName) {
+	  switch (ordName) {
+	  case "so": return "blue";
+	  case "hb": return "green";
+	  case "mc": return "brown";
+	  case "dc": return "purple";
+	  case "fhb": return "darkgreen";
+	  }
+	  throw new AssertionError("unknown ordering");
+	}
 
 	
 	/**
@@ -325,5 +472,4 @@ final class ConcurrentStringVisualizer extends StringVisualizer<ConcurrentTransl
 		}
 		return "";
 	}
-	
 }
