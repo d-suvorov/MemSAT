@@ -239,6 +239,7 @@ final class ConcurrentStringVisualizer extends StringVisualizer<ConcurrentTransl
           if (inst.action() == Action.FREEZE) {
             instString = instString + "(" + methodNames.get(inst.cgNode()) + ")";
           }
+          instString = instString.replaceAll("[<>]", "");
           final String lineString = lineString(inst);
           StringBuilder s = new StringBuilder();
           if (!lineString.isEmpty()) {
