@@ -38,6 +38,7 @@ import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.memsat.concurrent.Execution;
 import com.ibm.wala.memsat.concurrent.Justification;
 import com.ibm.wala.memsat.concurrent.Program;
+import com.ibm.wala.memsat.concurrent.memory.jmm.JMMExecution;
 import com.ibm.wala.memsat.frontEnd.IRType;
 import com.ibm.wala.memsat.frontEnd.InlinedInstruction;
 import com.ibm.wala.memsat.frontEnd.InlinedInstruction.Action;
@@ -338,7 +339,7 @@ final class ConcurrentStringVisualizer extends StringVisualizer<ConcurrentTransl
 	
 	private void dumpExecutionInDotFormat(String filename, 
 	    String name, Execution exec, Map<CGNode,String> methodNames)
-	{ 
+	{
 	  String graph = dumpExecutionInDotFormatImpl(name, exec, methodNames);
 	  
     Path path = Paths.get(filename);
@@ -430,8 +431,8 @@ final class ConcurrentStringVisualizer extends StringVisualizer<ConcurrentTransl
 	  case "mc": return "brown";
 	  case "dc": return "purple";
 	  case "fhb": return "darkgreen";
+	  default: return "black";
 	  }
-	  throw new AssertionError("unknown ordering");
 	}
 
 	
