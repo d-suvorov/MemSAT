@@ -10,10 +10,14 @@
  *****************************************************************************/
 package com.ibm.wala.memsat.translation;
 
+import java.util.Map;
 import java.util.Set;
 
+import com.ibm.wala.ipa.callgraph.propagation.rta.CallSite;
 import com.ibm.wala.memsat.translation.Environment.Frame;
+import com.ibm.wala.ssa.SSAInstruction;
 
+import edu.emory.mathcs.backport.java.util.Collections;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 
@@ -68,4 +72,8 @@ public interface MethodTranslation {
 	 * @return this.frame
 	 */
 	public abstract Frame frame();
+	
+	default Map<CallSite, Formula> getMethodEntryGuard() {
+	  return Collections.emptyMap();
+	}
 }

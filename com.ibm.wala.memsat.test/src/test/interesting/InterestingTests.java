@@ -27,6 +27,7 @@ public abstract class InterestingTests extends ConcurrentTests {
 	private Miniatur getMiniatur(int speculations) {
 		Miniatur mini = miniatur(speculations);
 		mini.options().kodkodOptions().setBitwidth(8);
+		// mini.options().setRecursionLimit(5);
 		return mini;
 	}
 	

@@ -74,9 +74,9 @@ final class ConcurrentMemoryHandler implements MemoryInstructionHandler {
 			insts.addAll( tInfo.actions() );
 			guards.put( tInfo.start(), Formula.TRUE);
 			guards.put( tInfo.end(), Formula.TRUE);
-			for (InlinedInstruction freeze : tInfo.freezes()) {
+			/*for (InlinedInstruction freeze : tInfo.freezes()) {
 			  guards.put(freeze, Formula.TRUE);
-			}
+			}*/
 			// TODO merge this loops
 			for (InlinedInstruction inst : tInfo.actions()) {
 			  if (inst.isInitWrite()) {
@@ -88,6 +88,10 @@ final class ConcurrentMemoryHandler implements MemoryInstructionHandler {
 		this.monitors = new LinkedHashMap<InlinedInstruction, Expression>();
 		this.reads = new LinkedHashMap<InlinedInstruction, Relation>();
 		this.writes = new LinkedHashMap<InlinedInstruction, Expression>();
+	}
+	
+	public void addGuard(InlinedInstruction inst, Formula guard) {
+	  guards.put(inst, guard);
 	}
 	
 	/**

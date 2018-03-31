@@ -17,6 +17,7 @@ import static com.ibm.wala.memsat.util.Strings.repeat;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -37,11 +38,13 @@ import com.ibm.wala.cast.java.ssa.EnclosingObjectReference;
 import com.ibm.wala.cast.js.ipa.summaries.JavaScriptSummarizedFunction;
 import com.ibm.wala.cast.loader.AstMethod;
 import com.ibm.wala.cfg.IBasicBlock;
+import com.ibm.wala.classLoader.CallSiteReference;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.callgraph.propagation.PointerKey;
+import com.ibm.wala.ipa.callgraph.propagation.rta.CallSite;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.memsat.frontEnd.FieldSSATable;
 import com.ibm.wala.memsat.frontEnd.IRType;
@@ -102,6 +105,8 @@ import kodkod.util.ints.IndexedEntry;
 public final class Translator implements MethodTranslator {
 
 	private final SpecialTranslatorFactory specialTransls;
+	
+	public final Map<CallSite, Formula> callGuards = new HashMap<>();
 	
 	/**
 	 * Constructs a new generic method translator.
@@ -253,7 +258,12 @@ public final class Translator implements MethodTranslator {
 				public Frame frame() { return frame; }
 				public Formula normalExitGuard() { return exitGuard; }
 				public <T> T returnValue() { return (T) returnValue; }
-				public Set<TranslationWarning> warnings() { return warnings; } 
+				public Set<TranslationWarning> warnings() { return warnings; }
+				
+				@Override
+				public Map<CallSite, Formula> getMethodEntryGuard() {
+          return callGuards;
+				}
 			};
 		}
 
@@ -388,8 +398,12 @@ public final class Translator implements MethodTranslator {
 				typeGuard = Formula.TRUE;
 			}
 			
-			final MethodTranslation result = translate(guardHandler.absoluteEntryGuard(call).and(typeGuard),
+			Formula entryGuard = guardHandler.absoluteEntryGuard(call).and(typeGuard);
+			final MethodTranslation result = translate(entryGuard,
 					env.push(call, info.cgNodeInformation(target)), memoryHandler);
+			
+			CallSiteReference csr = call.getCallSite();
+			Translator.this.callGuards.put(new CallSite(csr, node), entryGuard);
 			
 			// get all assertions and warnings
 			assertions.addAll(result.assertions());

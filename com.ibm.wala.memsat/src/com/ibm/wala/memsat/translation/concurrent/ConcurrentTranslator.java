@@ -24,6 +24,7 @@ import java.util.Set;
 
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.propagation.PointerKey;
+import com.ibm.wala.ipa.callgraph.propagation.rta.CallSite;
 import com.ibm.wala.memsat.Options;
 import com.ibm.wala.memsat.concurrent.Justification;
 import com.ibm.wala.memsat.frontEnd.FieldSSATable;
@@ -43,6 +44,8 @@ import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.util.collections.Iterator2Set;
 import com.ibm.wala.util.graph.Graph;
 import com.ibm.wala.util.graph.traverse.DFS;
+
+import kodkod.ast.Formula;
 
 /**
  * A translator for concurrent Wala programs.
@@ -69,6 +72,7 @@ public final class ConcurrentTranslator {
 	  
 		final ConcurrentMemoryHandler handler = new ConcurrentMemoryHandler(info,options);
 		final Map<CGNode, MethodTranslation> transls = translate(handler);
+		computeFreezesGuards(info, transls, handler);
 //		System.out.println(handler);
 		final ConcurrentProgram prog = new ConcurrentProgram(handler, transls);
 		final Justification just = options.memoryModel().justify(prog);
@@ -81,7 +85,22 @@ public final class ConcurrentTranslator {
 					Nodes.simplify(just.formula().and(handler.factory.invariants()), just.bounds()), just, warnings);
 	}
 	
-	/**
+	private static void computeFreezesGuards(WalaInformation info,
+	  Map<CGNode, MethodTranslation> transls, ConcurrentMemoryHandler handler)
+	{
+	  for(CGNode thread : info.threads()) {
+	    MethodTranslation threadTransl = transls.get(thread);
+	    final WalaConcurrentInformation tInfo = info.concurrentInformation(thread);
+	    for (InlinedInstruction freeze : tInfo.freezes()) {
+	      CallSite callSite = freeze.callStack().peek();
+	      Formula guard = threadTransl.getMethodEntryGuard().get(callSite);
+	      handler.addGuard(freeze, guard);
+	      // System.out.println("FREEZES GUARD: " + freeze + " -> " + guard);
+      }
+	  }
+  }
+
+  /**
 	 * Translates the threads in handler.factory.base.info.threads and returns the result.
 	 * In particular, let t1, t2 and t3 be threads such that t1->t3 + t2->t3 in handler.base.info.threads.
 	 * Suppose that there are two fields f1 and f2 read by t3 such that f1 is only written by t1 (and no other thread) and f2 is only
