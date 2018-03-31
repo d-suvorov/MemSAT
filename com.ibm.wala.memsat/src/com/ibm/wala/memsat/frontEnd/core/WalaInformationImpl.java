@@ -641,8 +641,12 @@ public class WalaInformationImpl implements WalaInformation {
 				// mutating rather than copying will break everything.
 				//
 				Stack<CallSite> calleeStack = new LinkedStack<CallSite>();
+				List<CallSite> calleeStackReversed = new ArrayList<>();
 				for (CallSite ref : current) {
-					calleeStack.push(ref);
+				  calleeStackReversed.add(ref);
+				}
+				for (int i = calleeStackReversed.size() - 1; i >= 0; i--) {
+				  calleeStack.push(calleeStackReversed.get(i));
 				}
 				calleeStack.push(new CallSite(site, node));
 				return calleeStack;
