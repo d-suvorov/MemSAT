@@ -47,6 +47,7 @@ import com.ibm.wala.memsat.frontEnd.WalaInformation;
 import com.ibm.wala.memsat.representation.ConstantFactory;
 import com.ibm.wala.memsat.representation.Interpreter;
 import com.ibm.wala.memsat.translation.concurrent.ConcurrentTranslation;
+import com.ibm.wala.memsat.util.Nodes;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.SSAAbstractInvokeInstruction;
 import com.ibm.wala.ssa.SSAArrayReferenceInstruction;
@@ -104,6 +105,7 @@ final class ConcurrentStringVisualizer extends StringVisualizer<ConcurrentTransl
 			for(int i = 0, max = speculations.size(); i < max; i++) { 
 				s.append("\n\n  speculative execution " + i + ":");
 				execution(s, speculations.get(i), methodNames);
+				// dumpExecutionInDotFormat("/tmp/memsat.dot." + i, "E_" + i, speculations.get(i), methodNames);
 				s.append("\n  committed " + i + ": ");
 				commit(s, commits.get(i));
 			}
@@ -354,6 +356,8 @@ final class ConcurrentStringVisualizer extends StringVisualizer<ConcurrentTransl
 	private String dumpExecutionInDotFormatImpl(
       String name, Execution exec, Map<CGNode,String> methodNames)
   { 
+	  boolean jmm = exec instanceof JMMExecution;
+	  
 	  StringBuilder s = new StringBuilder();
 	  s.append("digraph ").append(name).append(" {\n")
 	    .append("  forcelabels=true;\n")
@@ -386,15 +390,17 @@ final class ConcurrentStringVisualizer extends StringVisualizer<ConcurrentTransl
             .append(atom)
             .append(execed.get(inst))
             .append("\"];\n");
-          for (Iterator<InlinedInstruction> succItr = 
-              to.getSuccNodes(inst); succItr.hasNext(); ) 
-          {
-            InlinedInstruction succ = succItr.next();
-            if (execed.containsKey(succ)) {
-              Object succAtom = atom(eval.evaluate(exec.action(succ)));
-              edges.append("    ")
-                .append(atom).append("->")
-                .append(succAtom).append(";\n");
+          if (!jmm) {
+            for (Iterator<InlinedInstruction> succItr = 
+                to.getSuccNodes(inst); succItr.hasNext(); ) 
+            {
+              InlinedInstruction succ = succItr.next();
+              if (execed.containsKey(succ)) {
+                Object succAtom = atom(eval.evaluate(exec.action(succ)));
+                edges.append("    ")
+                  .append(atom).append("->")
+                  .append(succAtom).append(";\n");
+              }
             }
           }
         }
@@ -404,6 +410,12 @@ final class ConcurrentStringVisualizer extends StringVisualizer<ConcurrentTransl
       s.append("  }\n\n");
     }
     vizualizeRelationForDot(s, exec.w(), "ws", "red");
+    
+    if (jmm) {
+      JMMExecution jmmExec = (JMMExecution) exec;
+      Expression redPo = Nodes.transitiveReduction(jmmExec.po()).difference(Expression.IDEN);
+      vizualizeRelationForDot(s, redPo, "", "black");
+    }
     
     String generateFinalsOrdersPropValue = System.getProperty("generate.finals.orders");
     // System.out.println("generate.finals.orders=" + generateFinalsOrdersPropValue);

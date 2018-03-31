@@ -199,8 +199,8 @@ public final class JMMExecution extends AbstractExecution {
 		// all a, b: this.actions | a->b in this.po => a.thread = b.thread	
 		final Variable t = Variable.unary("t");
 		final Variable a = Variable.unary("a"), b = Variable.unary("b");
-//		wf.add( totalOrder(po, actions.intersection(p.actionsOf(t))).forAll(t.oneOf(threads)) );
-//		wf.add( a.product(b).in(po).implies(p.threadOf(a).eq(p.threadOf(b))).forAll(a.oneOf(actions).and(b.oneOf(actions))) );
+		// wf.add( totalOrder(po, actions.intersection(p.actionsOf(t))).forAll(t.oneOf(threads)) );
+		// wf.add( a.product(b).in(po).implies(p.threadOf(a).eq(p.threadOf(b))).forAll(a.oneOf(actions).and(b.oneOf(actions))) );
 		
 		// po is consistent with the program text
 //		final WalaInformation info = p.info();
@@ -346,7 +346,7 @@ public final class JMMExecution extends AbstractExecution {
 	 */
 	public Map<Expression, String> viz() {
 	  Map<Expression, String> res = new HashMap<>();
-	  res.put(Nodes.transitiveReduction(hb).difference(Expression.IDEN), "hb");
+	  res.put(Nodes.transitiveReduction(hb).difference(po()), "hb");
 	  res.put(Nodes.transitiveReduction(so).difference(Expression.IDEN), "so");
 	  res.put(mc.difference(Expression.IDEN), "mc");
 	  res.put(dc.difference(Expression.IDEN), "dc");
