@@ -28,11 +28,17 @@ public class FinalWrapperFactoryUninitialized {
   
   public static final void p1() {
     Singleton rs1 = factory.get();
-    assert rs1.x == 1;
+    assert rs1 != null;
+    if (rs1 != null) {
+      assert rs1.x == 1;
+    }
   }
 
   public static final void p2() {
     Singleton rs2 = factory.get();
-    assert rs2.x == 0;
+    assert rs2 != null;
+    if (rs2 != null) {
+      assert rs2.x == 0;
+    }
   }
 }
