@@ -36,6 +36,9 @@ public class FinalWrapperFactoryInitializedI {
 
   public static final void p2() {
     Singleton rs2 = factory.get(2);
-    assert rs2.x == 1;
+    assert rs2 != null;
+    if (rs2 != null) {
+      assert rs2.x == 1;
+    }
   }
 }
