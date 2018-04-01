@@ -27,9 +27,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.ibm.wala.classLoader.IField;
 import com.ibm.wala.ipa.callgraph.CGNode;
+import com.ibm.wala.ipa.callgraph.propagation.rta.CallSite;
 import com.ibm.wala.memsat.concurrent.Program;
 import com.ibm.wala.memsat.concurrent.memory.AbstractExecution;
 import com.ibm.wala.memsat.frontEnd.InlinedInstruction;
@@ -49,6 +51,7 @@ import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
+import kodkod.util.collections.Stack;
 /**
  * An execution specific to the JMM, based on 
  * <ol>
@@ -140,10 +143,10 @@ public final class JMMExecution extends AbstractExecution {
 	}
 	
 	private final Expression computeFreezes(Program p) {
-	  Map<CGNode, InlinedInstruction> freezesByInit = new HashMap<>();
+	  Map<Stack<CallSite>, InlinedInstruction> freezesByInit = new HashMap<>();
 	  for (InlinedInstruction inst : Programs.instructions(p.info())) {
 	    if (inst.action() == Action.FREEZE) {
-	      freezesByInit.put(inst.cgNode(), inst);
+	      freezesByInit.put(inst.callStack(), inst);
 	    }
 	  }
 	  
@@ -159,7 +162,7 @@ public final class JMMExecution extends AbstractExecution {
           final SSAFieldAccessInstruction access = (SSAFieldAccessInstruction) inst.instruction();
           if (access instanceof SSAPutInstruction) {
             Expression field = p.getReferencedField(inst);
-            InlinedInstruction freeze = freezesByInit.get(node);
+            InlinedInstruction freeze = freezesByInit.get(inst.callStack());
             Expression edge = field.product(action(freeze));
             fz.add(edge);
           }
