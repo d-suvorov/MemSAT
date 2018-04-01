@@ -1,20 +1,15 @@
 package data.interesting;
 
-public class FinalWrapperDebug1 {
+public class FinalWrapperDebug3 {
   private FinalWrapper wrapper;
-
-  public void put1() {
-    FinalWrapper w = new FinalWrapper(
-      new Singleton()
-    );
-    wrapper = w;
-  }
   
-  public Singleton get2() {
+  public Singleton get(int tid) {
     FinalWrapper w = wrapper;
-    assert w != null;
+    if (tid == 2) {
+      assert w != null;
+    }
     if (w == null) {
-      synchronized (this) {
+      synchronized(this) {
         w = wrapper;
         if (w == null) {
           w = new FinalWrapper(new Singleton());
@@ -32,14 +27,14 @@ public class FinalWrapperDebug1 {
     }
   }
   
-  public static FinalWrapperDebug1 factory = new FinalWrapperDebug1();
+  public static FinalWrapperDebug3 factory = new FinalWrapperDebug3();
   
   public static final void p1() {
-    factory.put1();
+    factory.get(1);
   }
 
   public static final void p2() {
-    Singleton rs2 = factory.get2();
+    Singleton rs2 = factory.get(2);
     assert rs2 != null;
     if (rs2 != null) {
       int rx2 = rs2.x;

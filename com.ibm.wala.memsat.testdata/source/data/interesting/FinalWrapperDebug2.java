@@ -1,20 +1,27 @@
 package data.interesting;
 
-public class FinalWrapperDebug1 {
+public class FinalWrapperDebug2 {
   private FinalWrapper wrapper;
 
-  public void put1() {
-    FinalWrapper w = new FinalWrapper(
-      new Singleton()
-    );
-    wrapper = w;
+  public Singleton put1() {
+    FinalWrapper w = wrapper;
+    if (w == null) {
+      synchronized(this) {
+        w = wrapper;
+        if (w == null) {
+          w = new FinalWrapper(new Singleton());
+          wrapper = w;
+        }
+      }
+    }
+    return w.instance;
   }
   
   public Singleton get2() {
     FinalWrapper w = wrapper;
     assert w != null;
     if (w == null) {
-      synchronized (this) {
+      synchronized(this) {
         w = wrapper;
         if (w == null) {
           w = new FinalWrapper(new Singleton());
@@ -32,7 +39,7 @@ public class FinalWrapperDebug1 {
     }
   }
   
-  public static FinalWrapperDebug1 factory = new FinalWrapperDebug1();
+  public static FinalWrapperDebug2 factory = new FinalWrapperDebug2();
   
   public static final void p1() {
     factory.put1();

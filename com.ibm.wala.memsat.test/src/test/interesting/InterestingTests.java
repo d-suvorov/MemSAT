@@ -5,6 +5,7 @@ import static test.TestUtil.threadMethods;
 
 import java.io.File;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.ibm.wala.memsat.Miniatur;
@@ -16,6 +17,8 @@ import data.interesting.FinalWrapperFactoryInitializedI;
 import data.interesting.FinalWrapperFactoryUninitialized;
 import data.interesting.FinalWrapperDebug0;
 import data.interesting.FinalWrapperDebug1;
+import data.interesting.FinalWrapperDebug2;
+import data.interesting.FinalWrapperDebug3;
 import data.interesting.FinalWrapperFactoryBug;
 import data.interesting.MultipleObjects;
 import test.ConcurrentTests;
@@ -59,9 +62,21 @@ public abstract class InterestingTests extends ConcurrentTests {
 		test(getMiniatur(5), FinalWrapperDebug0.class, true);
 	}
 	
+	@Ignore
 	@Test
 	public final void testFinalWrapperDebug1() {
 		test(getMiniatur(5), FinalWrapperDebug1.class, true);
+	}
+	
+	@Ignore
+	@Test
+	public final void testFinalWrapperDebug2() {
+		test(getMiniatur(5), FinalWrapperDebug2.class, true);
+	}
+	
+	@Test
+	public final void testFinalWrapperDebug3() {
+		test(getMiniatur(5), FinalWrapperDebug3.class, true);
 	}
 	
 	@Test
