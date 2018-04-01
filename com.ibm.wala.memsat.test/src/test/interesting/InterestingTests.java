@@ -14,6 +14,7 @@ import data.interesting.BlockingFactoryReadUninitialized;
 import data.interesting.FinalWrapperFactoryInitialized;
 import data.interesting.FinalWrapperFactoryInitializedI;
 import data.interesting.FinalWrapperFactoryUninitialized;
+import data.interesting.FinalWrapperDebug0;
 import data.interesting.FinalWrapperFactoryBug;
 import data.interesting.MultipleObjects;
 import test.ConcurrentTests;
@@ -50,6 +51,11 @@ public abstract class InterestingTests extends ConcurrentTests {
 	@Test
 	public final void testFinalWrapperFactoryInitializedI() {
 		test(getMiniatur(3), FinalWrapperFactoryInitializedI.class, true);
+	}
+	
+	@Test
+	public final void testFinalWrapperDebug() {
+		test(getMiniatur(5), FinalWrapperDebug0.class, true);
 	}
 	
 	@Test
