@@ -15,6 +15,7 @@ import data.interesting.FinalWrapperFactoryInitialized;
 import data.interesting.FinalWrapperFactoryInitializedI;
 import data.interesting.FinalWrapperFactoryUninitialized;
 import data.interesting.FinalWrapperDebug0;
+import data.interesting.FinalWrapperDebug1;
 import data.interesting.FinalWrapperFactoryBug;
 import data.interesting.MultipleObjects;
 import test.ConcurrentTests;
@@ -50,17 +51,22 @@ public abstract class InterestingTests extends ConcurrentTests {
 	
 	@Test
 	public final void testFinalWrapperFactoryInitializedI() {
-		test(getMiniatur(3), FinalWrapperFactoryInitializedI.class, true);
+		test(getMiniatur(5), FinalWrapperFactoryInitializedI.class, true);
 	}
 	
 	@Test
-	public final void testFinalWrapperDebug() {
+	public final void testFinalWrapperDebug0() {
 		test(getMiniatur(5), FinalWrapperDebug0.class, true);
 	}
 	
 	@Test
+	public final void testFinalWrapperDebug1() {
+		test(getMiniatur(5), FinalWrapperDebug1.class, true);
+	}
+	
+	@Test
 	public final void testFinalWrapperFactoryUninitialized() {
-		test(getMiniatur(3), FinalWrapperFactoryUninitialized.class, false);
+		test(getMiniatur(5), FinalWrapperFactoryUninitialized.class, false);
 	}
 	
 	@Test
