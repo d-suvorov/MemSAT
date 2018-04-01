@@ -22,6 +22,8 @@ import data.finals.Test09;
 import data.finals.Test10;
 import data.finals.Test11;
 import data.finals.Test12;
+import data.finals.Reachability00;
+import data.finals.Reachability01;
 import test.ConcurrentTests;
 
 public abstract class FinalsTests extends ConcurrentTests {
@@ -95,5 +97,15 @@ public abstract class FinalsTests extends ConcurrentTests {
 	@Test
 	public final void test12() {
 		test(miniatur(4), Test12.class, sat("12"));
+	}
+	
+	@Test
+	public final void reachability00() {
+		test(miniatur(5), Reachability00.class, false);
+	}
+	
+	@Test
+	public final void reachability01() {
+		test(miniatur(5), Reachability01.class, true);
 	}
 }
