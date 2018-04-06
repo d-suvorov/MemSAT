@@ -22,6 +22,7 @@ import data.interesting.FinalWrapperDebug3;
 import data.interesting.FinalWrapperFactoryBug;
 import data.interesting.MultipleObjects;
 import data.interesting.AtomicCounterNaiveTest;
+import data.interesting.AtomicCounterTest;
 import test.ConcurrentTests;
 
 public abstract class InterestingTests extends ConcurrentTests {
@@ -96,7 +97,12 @@ public abstract class InterestingTests extends ConcurrentTests {
 	}
 	
 	@Test
-    public final void testAtomicCounter() {
+    public final void testAtomicCounterNaive() {
         test(getMiniatur(3), AtomicCounterNaiveTest.class, true);
+    }
+	
+	@Test
+    public final void testAtomicCounter() {
+        test(getMiniatur(3), AtomicCounterTest.class, true);
     }
 }
