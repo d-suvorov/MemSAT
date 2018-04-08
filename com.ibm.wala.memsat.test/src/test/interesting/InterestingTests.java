@@ -103,6 +103,9 @@ public abstract class InterestingTests extends ConcurrentTests {
 	
 	@Test
     public final void testAtomicCounter() {
-        test(getMiniatur(3), AtomicCounterTest.class, true);
+        Miniatur mini = getMiniatur(3);
+        mini.options().kodkodOptions().setBitwidth(3);
+        mini.options().setloopUnrollDepth(1);
+        test(mini, AtomicCounterTest.class, true);
     }
 }
