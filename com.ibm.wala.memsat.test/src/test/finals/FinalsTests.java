@@ -24,6 +24,8 @@ import data.finals.SimplePublicationObject0;
 import data.finals.SimplePublicationObject1;
 import data.finals.Reachability00;
 import data.finals.Reachability01;
+import data.finals.Transitivity00;
+import data.finals.Transitivity01;
 import test.ConcurrentTests;
 
 public abstract class FinalsTests extends ConcurrentTests {
@@ -107,5 +109,15 @@ public abstract class FinalsTests extends ConcurrentTests {
 	@Test
 	public final void reachability01() {
 		test(miniatur(5), Reachability01.class, true);
+	}
+	
+	@Test
+	public final void transitivity00() {
+		test(miniatur(7), Transitivity00.class, false);
+	}
+	
+	@Test
+	public final void transitivity01() {
+		test(miniatur(7), Transitivity01.class, true);
 	}
 }
