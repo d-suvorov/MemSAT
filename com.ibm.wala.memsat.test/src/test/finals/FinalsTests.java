@@ -10,18 +10,18 @@ import org.junit.Test;
 
 import com.ibm.wala.memsat.Miniatur;
 
-import data.finals.Test01;
-import data.finals.Test02;
-import data.finals.Test03;
-import data.finals.Test04;
-import data.finals.Test05;
-import data.finals.Test06;
-import data.finals.Test07;
-import data.finals.Test08;
-import data.finals.Test09;
-import data.finals.Test10;
-import data.finals.Test11;
-import data.finals.Test12;
+import data.finals.SimplePublication01;
+import data.finals.SimplePublication02;
+import data.finals.LeakedReferences01;
+import data.finals.LeakedReferences02;
+import data.finals.LeakedReferences03;
+import data.finals.LeakedReferences04;
+import data.finals.LeakedReferences05;
+import data.finals.LeakedReferences06;
+import data.finals.NestedCtors01;
+import data.finals.NestedCtors02;
+import data.finals.SimplePublicationObject0;
+import data.finals.SimplePublicationObject1;
 import data.finals.Reachability00;
 import data.finals.Reachability01;
 import test.ConcurrentTests;
@@ -40,63 +40,63 @@ public abstract class FinalsTests extends ConcurrentTests {
 	private final boolean sat(String test) { return sat.contains(test); }
 
 	@Test
-	public final void test01() {
-		test(miniatur(4), Test01.class, sat("01"));
+	public final void simplePublication01() {
+		test(miniatur(4), SimplePublication01.class, sat("01"));
 	}
 	
 	@Test
-	public final void test02() {
-		test(miniatur(4), Test02.class, sat("02"));
+	public final void simplePublication02() {
+		test(miniatur(4), SimplePublication02.class, sat("02"));
 	}
 	
 	@Test
-	public final void test03() {
-		test(miniatur(4), Test03.class, sat("03"));
+	public final void leakedReferences01() {
+		test(miniatur(4), LeakedReferences01.class, sat("03"));
 	}
 	
 	@Test
-	public final void test04() {
-		test(miniatur(4), Test04.class, sat("04"));
+	public final void leakedReferences02() {
+		test(miniatur(4), LeakedReferences02.class, sat("04"));
 	}
 	
 	@Test
-	public final void test05() {
-		test(miniatur(4), Test05.class, sat("05"));
+	public final void leakedReferences03() {
+		test(miniatur(4), LeakedReferences03.class, sat("05"));
 	}
 	
 	@Test
-	public final void test06() {
-		test(miniatur(4), Test06.class, sat("06"));
+	public final void leakedReferences04() {
+		test(miniatur(4), LeakedReferences04.class, sat("06"));
 	}
 	
 	@Test
-	public final void test07() {
-		test(miniatur(4), Test07.class, sat("07"));
+	public final void leakedReferences05() {
+		test(miniatur(4), LeakedReferences05.class, sat("07"));
 	}
 	
 	@Test
-	public final void test08() {
-		test(miniatur(4), Test08.class, sat("08"));
+	public final void leakedReferences06() {
+		test(miniatur(4), LeakedReferences06.class, sat("08"));
 	}
 	
 	@Test
-	public final void test09() {
-		test(miniatur(4), Test09.class, sat("09"));
+	public final void nestedCtors01() {
+		test(miniatur(4), NestedCtors01.class, sat("09"));
 	}
 	
 	@Test
-	public final void test10() {
-		test(miniatur(4), Test10.class, sat("10"));
+	public final void nestedCtors02() {
+		test(miniatur(4), NestedCtors02.class, sat("10"));
 	}
 	
 	@Test
-	public final void test11() {
-		test(miniatur(4), Test11.class, sat("11"));
+	public final void simplePublicationObject0() {
+		test(miniatur(4), SimplePublicationObject0.class, sat("11"));
 	}
 	
 	@Test
-	public final void test12() {
-		test(miniatur(4), Test12.class, sat("12"));
+	public final void simplePublicationObject1() {
+		test(miniatur(4), SimplePublicationObject1.class, sat("12"));
 	}
 	
 	@Test

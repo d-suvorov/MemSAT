@@ -1,6 +1,6 @@
 package data.finals;
 
-public class Test10 {
+public class NestedCtors01 {
 	public static class Base {
 		public final int baseField;
 		
@@ -28,7 +28,7 @@ public class Test10 {
 		Derived td = d;
 		assert td != null;
 		if (td != null) {
-			assert td.baseField == 0;
+			assert td.baseField == 1;
 			assert td.derivedField == 0;
 		}
 	}

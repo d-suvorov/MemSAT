@@ -1,6 +1,6 @@
 package data.finals;
 
-public class Test05 {
+public class LeakedReferences04 {
 	public static class A {
 		final int f;
 		
@@ -18,12 +18,6 @@ public class Test05 {
 	}
 
 	public static final void p2() {
-		A tp = p;
-		assert tp != null;
-		if (tp != null) {
-			assert tp.f == 0;
-		}
-		
 		A tq = q;
 		assert tq != null;
 		if (tq != null) {

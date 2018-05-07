@@ -5,6 +5,7 @@ import static test.TestUtil.threadMethods;
 
 import java.io.File;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.ibm.wala.memsat.Miniatur;
@@ -57,16 +58,19 @@ public abstract class ArithTests extends ConcurrentTests {
 		test(getMiniatur(), BasicControlFlow.class, true);
 	}
 	
+	@Ignore
 	@Test
 	public final void testPrimitiveArraysSimple() {
 		test(getMiniatur(), PrimitiveArraysSimple.class, true);
 	}
 	
+	@Ignore
 	@Test
 	public final void testPrimitiveArraysRace1() {
 		test(getMiniatur(), PrimitiveArraysRace1.class, true);
 	}
 	
+	@Ignore
 	@Test
 	public final void testPrimitiveArraysRace2() {
 		test(getMiniatur(), PrimitiveArraysRace2.class, false);

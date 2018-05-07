@@ -1,6 +1,6 @@
 package data.finals;
 
-public class Test02 {
+public class SimplePublication02 {
 	public static class A {
 		final int f;
 		

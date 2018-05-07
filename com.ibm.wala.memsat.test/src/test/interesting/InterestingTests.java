@@ -81,6 +81,7 @@ public abstract class InterestingTests extends ConcurrentTests {
 		test(getMiniatur(5), FinalWrapperDebug3.class, true);
 	}
 	
+	@Ignore
 	@Test
 	public final void testFinalWrapperFactoryUninitialized() {
 		test(getMiniatur(5), FinalWrapperFactoryUninitialized.class, false);

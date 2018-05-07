@@ -1,6 +1,6 @@
 package data.finals;
 
-public class Test08 {
+public class LeakedReferences06 {
 	public static class A {
 		final int f;
 		

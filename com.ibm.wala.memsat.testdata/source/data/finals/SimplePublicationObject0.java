@@ -1,11 +1,11 @@
 package data.finals;
 
-public final class Test01 {
+public class SimplePublicationObject0 {	
 	public static class A {
-		final int f;
+		final Object f;
 		
 		A() {
-			f = 1;
+			f = new Object();
 		}
 	}
 	
@@ -20,7 +20,7 @@ public final class Test01 {
 		assert ta != null;
 		if (ta != null) {
 			// Prohibited by the finals semantics
-			assert ta.f == 0;
+			assert ta.f == null;
 		}
 	}
 }
